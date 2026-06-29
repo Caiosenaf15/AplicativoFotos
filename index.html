@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>📸 Nossa Festa</title>
+
+
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #07071A;
+    --surface: #0F0F2E;
+    --card: #161630;
+    --gold: #F7C948;
+    --pink: #FF6B9D;
+    --purple: #7B61FF;
+    --white: #FFFFFF;
+    --muted: rgba(255,255,255,0.45);
+    --border: rgba(255,255,255,0.08);
+    --radius: 16px;
+    --font: 'Inter', system-ui, sans-serif;
+  }
+
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@700&display=swap');
+
+  html, body {
+    min-height: 100dvh;
+    background: var(--bg);
+    color: var(--white);
+    font-family: var(--font);
+    overflow-x: hidden;
+  }
+
+  /* ── STAR BACKGROUND ── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      radial-gradient(1px 1px at 15% 20%, rgba(255,255,255,0.6) 0%, transparent 100%),
+      radial-gradient(1px 1px at 45% 10%, rgba(255,255,255,0.4) 0%, transparent 100%),
+      radial-gradient(1px 1px at 75% 30%, rgba(255,255,255,0.5) 0%, transparent 100%),
+      radial-gradient(1px 1px at 25% 60%, rgba(255,255,255,0.3) 0%, transparent 100%),
+      radial-gradient(1px 1px at 85% 55%, rgba(255,255,255,0.5) 0%, transparent 100%),
+      radial-gradient(1px 1px at 60% 80%, rgba(255,255,255,0.4) 0%, transparent 100%),
+      radial-gradient(1px 1px at 10% 85%, rgba(255,255,255,0.3) 0%, transparent 100%),
+      radial-gradient(1px 1px at 90% 90%, rgba(255,255,255,0.4) 0%, transparent 100%),
+      radial-gradient(2px 2px at 50% 50%, rgba(247,201,72,0.15) 0%, transparent 60%),
+      radial-gradient(600px 600px at 80% 20%, rgba(123,97,255,0.06) 0%, transparent 70%),
+      radial-gradient(500px 500px at 20% 70%, rgba(255,107,157,0.05) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ── HEADER ── */
+  header {
+    position: relative;
+    z-index: 10;
+    text-align: center;
+    padding: 48px 20px 32px;
+  }
+
+  .party-title {
+    font-family: 'Space Grotesk', var(--font);
+    font-size: clamp(2rem, 8vw, 3.5rem);
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--gold) 0%, var(--pink) 50%, var(--purple) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    margin-bottom: 8px;
+  }
+
+  .party-subtitle {
+    color: var(--muted);
+    font-size: 15px;
+    letter-spacing: 0.04em;
+  }
+
+  .live-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(247,201,72,0.12);
+    border: 1px solid rgba(247,201,72,0.25);
+    color: var(--gold);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    padding: 5px 12px;
+    border-radius: 999px;
+    margin-top: 16px;
+  }
+
+  .live-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--gold);
+    animation: pulse-dot 1.5s ease-in-out infinite;
+  }
+
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.7); }
+  }
+
+  /* ── UPLOAD ZONE ── */
+  .upload-section {
+    position: relative;
+    z-index: 10;
+    max-width: 520px;
+    margin: 0 auto 40px;
+    padding: 0 20px;
+  }
+
+  .upload-card {
+    background: var(--card);
+    border: 1.5px dashed rgba(123,97,255,0.35);
+    border-radius: var(--radius);
+    padding: 32px 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .upload-card:hover, .upload-card.drag-over {
+    border-color: var(--purple);
+    background: rgba(123,97,255,0.06);
+  }
+
+  .upload-card input[type=file] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
+  }
+
+  .upload-icon {
+    width: 52px;
+    height: 52px;
+    margin: 0 auto 14px;
+    background: rgba(123,97,255,0.15);
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+  }
+
+  .upload-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--white);
+    margin-bottom: 4px;
+  }
+
+  .upload-hint {
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  /* ── NAME INPUT ── */
+  .name-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 14px;
+  }
+
+  .name-input {
+    flex: 1;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--white);
+    font-size: 14px;
+    padding: 11px 14px;
+    outline: none;
+    font-family: var(--font);
+    transition: border-color 0.2s;
+  }
+
+  .name-input::placeholder { color: var(--muted); }
+  .name-input:focus { border-color: rgba(123,97,255,0.5); }
+
+  .send-btn {
+    background: var(--purple);
+    color: var(--white);
+    border: none;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 11px 20px;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.1s;
+    white-space: nowrap;
+    font-family: var(--font);
+  }
+
+  .send-btn:hover { opacity: 0.85; }
+  .send-btn:active { transform: scale(0.97); }
+  .send-btn:disabled { opacity: 0.4; cursor: default; }
+
+  /* ── PREVIEW ── */
+  .preview-wrap {
+    margin-top: 14px;
+    display: none;
+    position: relative;
+    border-radius: 12px;
+    overflow: hidden;
+    max-height: 220px;
+  }
+
+  .preview-wrap.show { display: block; }
+
+  .preview-wrap img, .preview-wrap video {
+    width: 100%;
+    height: 220px;
+    object-fit: cover;
+    border-radius: 12px;
+    display: block;
+  }
+
+  .preview-clear {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: rgba(0,0,0,0.6);
+    border: none;
+    color: white;
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    cursor: pointer;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* ── PROGRESS BAR ── */
+  .progress-wrap {
+    margin-top: 12px;
+    display: none;
+  }
+
+  .progress-wrap.show { display: block; }
+
+  .progress-bar-bg {
+    background: rgba(255,255,255,0.08);
+    border-radius: 999px;
+    height: 4px;
+    overflow: hidden;
+  }
+
+  .progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--purple), var(--pink));
+    border-radius: 999px;
+    width: 0%;
+    transition: width 0.3s;
+  }
+
+  .progress-label {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 6px;
+    text-align: center;
+  }
+
+  /* ── GALLERY ── */
+  .gallery-section {
+    position: relative;
+    z-index: 10;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 16px 60px;
+  }
+
+  .gallery-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    padding: 0 4px;
+  }
+
+  .gallery-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--muted);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .photo-count {
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 10px;
+  }
+
+  @media (min-width: 600px) {
+    .grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
+  }
+
+  .grid-item {
+    position: relative;
+    border-radius: 12px;
+    overflow: hidden;
+    aspect-ratio: 1;
+    cursor: pointer;
+    background: var(--card);
+    animation: fade-in 0.4s ease forwards;
+  }
+
+  @keyframes fade-in {
+    from { opacity: 0; transform: scale(0.94); }
+    to { opacity: 1; transform: scale(1); }
+  }
+
+  .grid-item img, .grid-item video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.3s;
+  }
+
+  .grid-item:hover img, .grid-item:hover video {
+    transform: scale(1.04);
+  }
+
+  .grid-item-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 50%);
+    opacity: 0;
+    transition: opacity 0.25s;
+    display: flex;
+    align-items: flex-end;
+    padding: 10px;
+  }
+
+  .grid-item:hover .grid-item-overlay { opacity: 1; }
+
+  .grid-item-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: white;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .video-badge {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    background: rgba(0,0,0,0.55);
+    border-radius: 6px;
+    padding: 3px 7px;
+    font-size: 11px;
+    color: white;
+    font-weight: 600;
+  }
+
+  /* ── EMPTY STATE ── */
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--muted);
+  }
+
+  .empty-state .empty-icon { font-size: 48px; margin-bottom: 12px; }
+  .empty-state p { font-size: 15px; }
+
+  /* ── LIGHTBOX ── */
+  .lightbox {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    background: rgba(0,0,0,0.92);
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  .lightbox.open { display: flex; }
+
+  .lightbox-inner {
+    position: relative;
+    max-width: min(90vw, 900px);
+    max-height: 90dvh;
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  .lightbox-inner img, .lightbox-inner video {
+    max-width: 100%;
+    max-height: 85dvh;
+    object-fit: contain;
+    display: block;
+    border-radius: 12px;
+  }
+
+  .lightbox-close {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    background: rgba(255,255,255,0.1);
+    border: none;
+    color: white;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    font-size: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+  }
+
+  .lightbox-close:hover { background: rgba(255,255,255,0.2); }
+
+  .lightbox-info {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.6);
+    padding: 8px 18px;
+    border-radius: 999px;
+    font-size: 13px;
+    color: white;
+    white-space: nowrap;
+  }
+
+  /* ── TOAST ── */
+  .toast-container {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 999;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .toast {
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--white);
+    font-size: 14px;
+    padding: 12px 20px;
+    border-radius: 12px;
+    animation: toast-in 0.3s ease;
+    white-space: nowrap;
+  }
+
+  .toast.success { border-color: rgba(123,97,255,0.4); color: var(--gold); }
+  .toast.error { border-color: rgba(255,107,157,0.4); color: var(--pink); }
+
+  @keyframes toast-in {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── FIREBASE SETUP BANNER ── */
+  .setup-banner {
+    position: fixed;
+    top: 0;
+    inset-inline: 0;
+    z-index: 200;
+    background: linear-gradient(90deg, rgba(255,107,157,0.15), rgba(123,97,255,0.15));
+    border-bottom: 1px solid rgba(255,107,157,0.3);
+    padding: 12px 20px;
+    text-align: center;
+    font-size: 13px;
+    color: var(--white);
+    display: none;
+  }
+
+  .setup-banner.show { display: block; }
+  .setup-banner a { color: var(--gold); text-decoration: underline; }
+
+  .setup-banner + header { padding-top: 72px; }
+
+  /* ── SCROLLBAR ── */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="party-title" id="partyTitle">Maria 15 anos✨</div>
+  <div class="party-subtitle">Registre e compartilhe os momentos</div>
+  <div class="live-badge">
+    <span class="live-dot"></span>
+    <span id="onlineCount">0</span> fotos
+  </div>
+</header>
+
+<div class="upload-section">
+  <div class="upload-card" id="dropZone">
+    <input type="file" id="fileInput" accept="image/*,video/*" multiple>
+    <div class="upload-icon">📷</div>
+    <div class="upload-title">Adicionar foto ou vídeo</div>
+    <div class="upload-hint">Toque para abrir a câmera ou galeria</div>
+  </div>
+
+  <div class="preview-wrap" id="previewWrap">
+    <button class="preview-clear" id="clearPreview">✕</button>
+    <img id="previewImg" style="display:none">
+    <video id="previewVid" style="display:none" muted playsinline></video>
+  </div>
+
+  <div class="progress-wrap" id="progressWrap">
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" id="progressFill"></div>
+    </div>
+    <div class="progress-label" id="progressLabel">Enviando...</div>
+  </div>
+
+  <div class="name-row">
+    <input class="name-input" id="nameInput" type="text" placeholder="Seu nome (opcional)" maxlength="30">
+    <button class="send-btn" id="sendBtn" disabled>Enviar</button>
+  </div>
+</div>
+
+<div class="gallery-section">
+  <div class="gallery-header">
+    <span class="gallery-title">Álbum da festa</span>
+    <span class="photo-count" id="photoCountLabel"></span>
+  </div>
+  <div class="grid" id="gallery">
+    <div class="empty-state" id="emptyState" style="grid-column: 1/-1;">
+      <div class="empty-icon">🎉</div>
+      <p>Seja o primeiro a postar uma foto!</p>
+    </div>
+  </div>
+</div>
+
+<!-- Lightbox -->
+<div class="lightbox" id="lightbox">
+  <button class="lightbox-close" id="lightboxClose">✕</button>
+  <div class="lightbox-inner" id="lightboxInner"></div>
+  <div class="lightbox-info" id="lightboxInfo"></div>
+</div>
+
+<!-- Toasts -->
+<div class="toast-container" id="toastContainer"></div>
+
+</body>
+</html>
