@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>📸 Nossa Festa</title>
 
-
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -33,7 +32,6 @@
     overflow-x: hidden;
   }
 
-  /* ── STAR BACKGROUND ── */
   body::before {
     content: '';
     position: fixed;
@@ -54,12 +52,18 @@
     z-index: 0;
   }
 
-  /* ── HEADER ── */
   header {
     position: relative;
     z-index: 10;
     text-align: center;
     padding: 48px 20px 32px;
+  }
+
+  #cameraBtn {
+    background-color: transparent;
+    border: none;
+    cursor: pointer;
+    width: 100%;
   }
 
   .party-title {
@@ -109,7 +113,6 @@
     50% { opacity: 0.4; transform: scale(0.7); }
   }
 
-  /* ── UPLOAD ZONE ── */
   .upload-section {
     position: relative;
     z-index: 10;
@@ -130,18 +133,9 @@
     overflow: hidden;
   }
 
-  .upload-card:hover, .upload-card.drag-over {
+  .upload-card:hover {
     border-color: var(--purple);
     background: rgba(123,97,255,0.06);
-  }
-
-  .upload-card input[type=file] {
-    position: absolute;
-    inset: 0;
-    opacity: 0;
-    cursor: pointer;
-    width: 100%;
-    height: 100%;
   }
 
   .upload-icon {
@@ -168,7 +162,6 @@
     color: var(--muted);
   }
 
-  /* ── NAME INPUT ── */
   .name-row {
     display: flex;
     gap: 10px;
@@ -209,7 +202,6 @@
   .send-btn:active { transform: scale(0.97); }
   .send-btn:disabled { opacity: 0.4; cursor: default; }
 
-  /* ── PREVIEW ── */
   .preview-wrap {
     margin-top: 14px;
     display: none;
@@ -246,7 +238,6 @@
     justify-content: center;
   }
 
-  /* ── PROGRESS BAR ── */
   .progress-wrap {
     margin-top: 12px;
     display: none;
@@ -276,7 +267,6 @@
     text-align: center;
   }
 
-  /* ── GALLERY ── */
   .gallery-section {
     position: relative;
     z-index: 10;
@@ -377,7 +367,6 @@
     font-weight: 600;
   }
 
-  /* ── EMPTY STATE ── */
   .empty-state {
     text-align: center;
     padding: 60px 20px;
@@ -387,7 +376,6 @@
   .empty-state .empty-icon { font-size: 48px; margin-bottom: 12px; }
   .empty-state p { font-size: 15px; }
 
-  /* ── LIGHTBOX ── */
   .lightbox {
     display: none;
     position: fixed;
@@ -450,7 +438,6 @@
     white-space: nowrap;
   }
 
-  /* ── TOAST ── */
   .toast-container {
     position: fixed;
     bottom: 24px;
@@ -482,27 +469,6 @@
     to { opacity: 1; transform: translateY(0); }
   }
 
-  /* ── FIREBASE SETUP BANNER ── */
-  .setup-banner {
-    position: fixed;
-    top: 0;
-    inset-inline: 0;
-    z-index: 200;
-    background: linear-gradient(90deg, rgba(255,107,157,0.15), rgba(123,97,255,0.15));
-    border-bottom: 1px solid rgba(255,107,157,0.3);
-    padding: 12px 20px;
-    text-align: center;
-    font-size: 13px;
-    color: var(--white);
-    display: none;
-  }
-
-  .setup-banner.show { display: block; }
-  .setup-banner a { color: var(--gold); text-decoration: underline; }
-
-  .setup-banner + header { padding-top: 72px; }
-
-  /* ── SCROLLBAR ── */
   ::-webkit-scrollbar { width: 6px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
@@ -511,7 +477,7 @@
 <body>
 
 <header>
-  <div class="party-title" id="partyTitle">Maria 15 anos✨</div>
+  <div class="party-title" id="partyTitle">Maria 15 anos ✨</div>
   <div class="party-subtitle">Registre e compartilhe os momentos</div>
   <div class="live-badge">
     <span class="live-dot"></span>
@@ -521,10 +487,12 @@
 
 <div class="upload-section">
   <div class="upload-card" id="dropZone">
-    <input type="file" id="fileInput" accept="image/*,video/*" multiple>
-    <div class="upload-icon">📷</div>
-    <div class="upload-title">Adicionar foto ou vídeo</div>
-    <div class="upload-hint">Toque para abrir a câmera ou galeria</div>
+    <input id="fileInput" type="file" accept="image/*,video/*" hidden>
+    <button id="cameraBtn" type="button">
+      <div class="upload-icon">📷</div>
+      <div class="upload-title">Adicionar foto ou vídeo</div>
+      <div class="upload-hint">Toque para abrir a câmera ou galeria</div>
+    </button>
   </div>
 
   <div class="preview-wrap" id="previewWrap">
@@ -569,5 +537,233 @@
 <!-- Toasts -->
 <div class="toast-container" id="toastContainer"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  // ── CONFIG SUPABASE ──
+  const SUPABASE_URL = "https://qttansxigwchcojwisau.supabase.co";
+  const SUPABASE_KEY = "sb_publishable_CDY-I7zP9OcKMZ-ZagSZKw_HxBli5Ki";
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  // ── ELEMENTOS ──
+  const fileInput      = document.getElementById("fileInput");
+  const cameraBtn      = document.getElementById("cameraBtn");
+  const previewWrap    = document.getElementById("previewWrap");
+  const previewImg     = document.getElementById("previewImg");
+  const previewVid     = document.getElementById("previewVid");
+  const clearPreview   = document.getElementById("clearPreview");
+  const sendBtn        = document.getElementById("sendBtn");
+  const nameInput      = document.getElementById("nameInput");
+  const gallery        = document.getElementById("gallery");
+  const onlineCount    = document.getElementById("onlineCount");
+  const photoCountLabel= document.getElementById("photoCountLabel");
+  const progressWrap   = document.getElementById("progressWrap");
+  const progressFill   = document.getElementById("progressFill");
+  const progressLabel  = document.getElementById("progressLabel");
+  const lightbox       = document.getElementById("lightbox");
+  const lightboxInner  = document.getElementById("lightboxInner");
+  const lightboxInfo   = document.getElementById("lightboxInfo");
+  const lightboxClose  = document.getElementById("lightboxClose");
+  const toastContainer = document.getElementById("toastContainer");
+
+  let arquivoSelecionado = null;
+
+  // ── TOAST ──
+  function showToast(msg, type = "success") {
+    const t = document.createElement("div");
+    t.className = `toast ${type}`;
+    t.textContent = msg;
+    toastContainer.appendChild(t);
+    setTimeout(() => t.remove(), 3500);
+  }
+
+  // ── ABRIR SELETOR DE ARQUIVO ──
+  cameraBtn.addEventListener("click", () => fileInput.click());
+
+  // ── PREVIEW AO SELECIONAR ARQUIVO ──
+  fileInput.addEventListener("change", () => {
+    if (!fileInput.files.length) return;
+
+    arquivoSelecionado = fileInput.files[0];
+
+    const url = URL.createObjectURL(arquivoSelecionado);
+
+    previewImg.style.display = "none";
+    previewVid.style.display = "none";
+
+    if (arquivoSelecionado.type.startsWith("image")) {
+      previewImg.src = url;
+      previewImg.style.display = "block";
+    } else {
+      previewVid.src = url;
+      previewVid.style.display = "block";
+    }
+
+    previewWrap.classList.add("show");
+    sendBtn.disabled = false;
+  });
+
+  // ── LIMPAR PREVIEW ──
+  clearPreview.addEventListener("click", () => {
+    arquivoSelecionado = null;
+    fileInput.value = "";
+    previewImg.src = "";
+    previewVid.src = "";
+    previewWrap.classList.remove("show");
+    sendBtn.disabled = true;
+  });
+
+  // ── ENVIAR ──
+  sendBtn.addEventListener("click", async () => {
+    if (!arquivoSelecionado) return;
+
+    const nome = nameInput.value.trim();
+    const ext  = arquivoSelecionado.name.split(".").pop();
+    const nomeArquivo = Date.now() + (nome ? "_" + nome.replace(/\s+/g, "_") : "") + "." + ext;
+
+    sendBtn.disabled = true;
+    progressWrap.classList.add("show");
+    progressFill.style.width = "30%";
+    progressLabel.textContent = "Enviando...";
+
+    const { error } = await sb.storage
+      .from("fotos")
+      .upload(nomeArquivo, arquivoSelecionado);
+
+    if (error) {
+      showToast("Erro: " + error.message, "error");
+      sendBtn.disabled = false;
+      progressWrap.classList.remove("show");
+      return;
+    }
+
+    progressFill.style.width = "100%";
+    progressLabel.textContent = "Concluído!";
+
+    const { data: urlData } = sb.storage.from("fotos").getPublicUrl(nomeArquivo);
+
+    adicionarItemNaGaleria(urlData.publicUrl, arquivoSelecionado.type, nome);
+    atualizarContador(1);
+    showToast("Foto enviada! 🎉");
+
+    // reset
+    setTimeout(() => progressWrap.classList.remove("show"), 1000);
+    arquivoSelecionado = null;
+    fileInput.value = "";
+    previewImg.src = "";
+    previewVid.src = "";
+    previewWrap.classList.remove("show");
+    sendBtn.disabled = true;
+  });
+
+  // ── ADICIONAR ITEM NA GALERIA (só renderiza, não busca do servidor) ──
+  function adicionarItemNaGaleria(url, tipo, nome = "") {
+    document.getElementById("emptyState")?.remove();
+
+    const item = document.createElement("div");
+    item.className = "grid-item";
+
+    const isVideo = tipo.startsWith("video");
+
+    item.innerHTML = isVideo
+      ? `<video src="${url}" muted playsinline></video>
+         <span class="video-badge">▶ Vídeo</span>`
+      : `<img src="${url}" loading="lazy">`;
+
+    const overlay = document.createElement("div");
+    overlay.className = "grid-item-overlay";
+    if (nome) overlay.innerHTML = `<span class="grid-item-name">📸 ${nome}</span>`;
+    item.appendChild(overlay);
+
+    item.addEventListener("click", () => abrirLightbox(url, isVideo, nome));
+
+    gallery.prepend(item);
+  }
+
+  // ── ATUALIZAR CONTADOR ──
+  let totalFotos = 0;
+  function atualizarContador(delta = 0) {
+    totalFotos += delta;
+    onlineCount.textContent = totalFotos;
+    photoCountLabel.textContent = totalFotos > 0 ? `${totalFotos} ${totalFotos === 1 ? "item" : "itens"}` : "";
+  }
+
+  // ── CARREGAR GALERIA DO SUPABASE ──
+  async function carregarGaleria() {
+    const { data, error } = await sb.storage
+      .from("fotos")
+      .list("", { sortBy: { column: "created_at", order: "desc" } });
+
+    if (error) {
+      showToast("Erro ao carregar galeria", "error");
+      console.error(error);
+      return;
+    }
+
+    // Filtra apenas arquivos (ignora pastas/placeholders sem extensão)
+    const arquivos = (data || []).filter(f => f.name.includes(".") && f.name !== ".emptyFolderPlaceholder");
+
+    if (arquivos.length === 0) return;
+
+    document.getElementById("emptyState")?.remove();
+    gallery.innerHTML = "";
+    totalFotos = 0;
+
+    for (const arquivo of arquivos) {
+      const { data: urlData } = sb.storage.from("fotos").getPublicUrl(arquivo.name);
+      const ext = arquivo.name.split(".").pop().toLowerCase();
+      const tipo = ["mp4", "mov", "webm"].includes(ext) ? "video/mp4" : "image/jpeg";
+
+      // Tenta extrair nome do arquivo (formato: timestamp_nome.ext)
+      const partes = arquivo.name.split("_");
+      const nomeExtraido = partes.length > 1
+        ? partes.slice(1).join("_").replace("." + ext, "").replace(/_/g, " ")
+        : "";
+
+      adicionarItemNaGaleria(urlData.publicUrl, tipo, nomeExtraido);
+      totalFotos++;
+    }
+
+    onlineCount.textContent = totalFotos;
+    photoCountLabel.textContent = `${totalFotos} ${totalFotos === 1 ? "item" : "itens"}`;
+  }
+
+  // ── LIGHTBOX ──
+  function abrirLightbox(url, isVideo, nome) {
+    lightboxInner.innerHTML = isVideo
+      ? `<video src="${url}" controls autoplay playsinline style="max-width:100%;max-height:85dvh;border-radius:12px;display:block;"></video>`
+      : `<img src="${url}" style="max-width:100%;max-height:85dvh;object-fit:contain;display:block;border-radius:12px;">`;
+
+    lightboxInfo.textContent = nome ? "📸 " + nome : "";
+    lightbox.classList.add("open");
+  }
+
+  lightboxClose.addEventListener("click", () => {
+    lightbox.classList.remove("open");
+    lightboxInner.innerHTML = "";
+  });
+
+  lightbox.addEventListener("click", (e) => {
+    if (e.target === lightbox) {
+      lightbox.classList.remove("open");
+      lightboxInner.innerHTML = "";
+    }
+  });
+
+  // ── INIT ──
+  carregarGaleria();
+</script>
+<footer style="
+  position: relative;
+  z-index: 10;
+  text-align: center;
+  padding: 0 0 32px;
+">
+  <a href="./admin.html" style="
+    font-size: 11px;
+    color: rgba(255,255,255,0.12);
+    text-decoration: none;
+    letter-spacing: 0.05em;
+  ">Admin</a>
+</footer>
 </body>
 </html>

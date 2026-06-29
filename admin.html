@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — Nossa Festa</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #07071A;
+    --card: #161630;
+    --gold: #F7C948;
+    --pink: #FF6B9D;
+    --purple: #7B61FF;
+    --white: #FFFFFF;
+    --muted: rgba(255,255,255,0.45);
+    --border: rgba(255,255,255,0.08);
+    --red: #FF4D4D;
+    --font: 'Inter', system-ui, sans-serif;
+  }
+
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@700&display=swap');
+
+  html, body {
+    min-height: 100dvh;
+    background: var(--bg);
+    color: var(--white);
+    font-family: var(--font);
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      radial-gradient(1px 1px at 15% 20%, rgba(255,255,255,0.6) 0%, transparent 100%),
+      radial-gradient(1px 1px at 75% 30%, rgba(255,255,255,0.5) 0%, transparent 100%),
+      radial-gradient(1px 1px at 85% 55%, rgba(255,255,255,0.5) 0%, transparent 100%),
+      radial-gradient(600px 600px at 80% 20%, rgba(123,97,255,0.06) 0%, transparent 70%),
+      radial-gradient(500px 500px at 20% 70%, rgba(255,107,157,0.05) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .login-wrap {
+    position: relative;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100dvh;
+    padding: 20px;
+  }
+
+  .login-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 40px 32px;
+    width: 100%;
+    max-width: 360px;
+    text-align: center;
+  }
+
+  .login-icon { font-size: 40px; margin-bottom: 16px; }
+
+  .login-title {
+    font-family: 'Space Grotesk', var(--font);
+    font-size: 22px;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--gold), var(--pink));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 6px;
+  }
+
+  .login-sub {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 28px;
+  }
+
+  .login-input {
+    width: 100%;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--white);
+    font-size: 15px;
+    padding: 13px 16px;
+    outline: none;
+    font-family: var(--font);
+    letter-spacing: 0.1em;
+    transition: border-color 0.2s;
+    margin-bottom: 12px;
+  }
+
+  .login-input:focus { border-color: rgba(123,97,255,0.5); }
+
+  .login-btn {
+    width: 100%;
+    background: var(--purple);
+    color: var(--white);
+    border: none;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    padding: 13px;
+    cursor: pointer;
+    font-family: var(--font);
+    transition: opacity 0.2s;
+  }
+
+  .login-btn:hover { opacity: 0.85; }
+
+  .login-error {
+    margin-top: 12px;
+    font-size: 13px;
+    color: var(--pink);
+    display: none;
+  }
+
+  .login-error.show { display: block; }
+
+  .admin-wrap {
+    display: none;
+    position: relative;
+    z-index: 10;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 40px 16px 60px;
+  }
+
+  .admin-wrap.show { display: block; }
+
+  .admin-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 32px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .admin-title {
+    font-family: 'Space Grotesk', var(--font);
+    font-size: 24px;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--gold), var(--pink));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .admin-meta {
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .logout-btn {
+    background: rgba(255,77,77,0.12);
+    border: 1px solid rgba(255,77,77,0.3);
+    color: var(--red);
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 16px;
+    cursor: pointer;
+    font-family: var(--font);
+    transition: background 0.2s;
+  }
+
+  .logout-btn:hover { background: rgba(255,77,77,0.2); }
+
+  .admin-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 12px;
+  }
+
+  @media (min-width: 600px) {
+    .admin-grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
+  }
+
+  .admin-item {
+    position: relative;
+    border-radius: 12px;
+    overflow: hidden;
+    aspect-ratio: 1;
+    background: var(--card);
+    border: 1px solid var(--border);
+  }
+
+  .admin-item img,
+  .admin-item video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .admin-item-info {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 100%);
+    padding: 28px 8px 8px;
+  }
+
+  .admin-item-name {
+    font-size: 11px;
+    color: rgba(255,255,255,0.8);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .delete-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: rgba(255,77,77,0.85);
+    border: none;
+    color: white;
+    border-radius: 8px;
+    width: 32px;
+    height: 32px;
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s, transform 0.1s;
+    backdrop-filter: blur(4px);
+  }
+
+  .delete-btn:hover { background: var(--red); transform: scale(1.1); }
+
+  .video-badge {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    background: rgba(0,0,0,0.6);
+    border-radius: 6px;
+    padding: 3px 7px;
+    font-size: 11px;
+    color: white;
+    font-weight: 600;
+  }
+
+  .loading-state,
+  .empty-state {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--muted);
+    font-size: 15px;
+  }
+
+  .loading-state .spin {
+    font-size: 36px;
+    display: block;
+    margin-bottom: 12px;
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .confirm-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    background: rgba(0,0,0,0.7);
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  .confirm-overlay.open { display: flex; }
+
+  .confirm-card {
+    background: var(--card);
+    border: 1px solid rgba(255,77,77,0.3);
+    border-radius: 16px;
+    padding: 32px 28px;
+    max-width: 340px;
+    width: 100%;
+    text-align: center;
+  }
+
+  .confirm-icon { font-size: 36px; margin-bottom: 12px; }
+
+  .confirm-title {
+    font-size: 17px;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+
+  .confirm-sub {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 24px;
+    word-break: break-all;
+  }
+
+  .confirm-btns { display: flex; gap: 10px; }
+
+  .confirm-cancel {
+    flex: 1;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid var(--border);
+    color: var(--white);
+    border-radius: 10px;
+    padding: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: var(--font);
+    transition: background 0.2s;
+  }
+
+  .confirm-cancel:hover { background: rgba(255,255,255,0.1); }
+
+  .confirm-delete {
+    flex: 1;
+    background: var(--red);
+    border: none;
+    color: white;
+    border-radius: 10px;
+    padding: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: var(--font);
+    transition: opacity 0.2s;
+  }
+
+  .confirm-delete:hover { opacity: 0.85; }
+
+  .toast-container {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 999;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .toast {
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--white);
+    font-size: 14px;
+    padding: 12px 20px;
+    border-radius: 12px;
+    animation: toast-in 0.3s ease;
+    white-space: nowrap;
+  }
+
+  .toast.success { border-color: rgba(123,97,255,0.4); color: var(--gold); }
+  .toast.error   { border-color: rgba(255,77,77,0.4);  color: var(--red); }
+
+  @keyframes toast-in {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-wrap" id="loginWrap">
+  <div class="login-card">
+    <div class="login-icon">🔐</div>
+    <div class="login-title">Área Admin</div>
+    <div class="login-sub">Digite a senha para gerenciar as fotos</div>
+    <input
+      class="login-input"
+      id="passwordInput"
+      type="password"
+      placeholder="Senha"
+      autocomplete="current-password"
+    >
+    <button class="login-btn" id="loginBtn">Entrar</button>
+    <div class="login-error" id="loginError">Senha incorreta. Tente novamente.</div>
+  </div>
+</div>
+
+<!-- PAINEL ADMIN -->
+<div class="admin-wrap" id="adminWrap">
+  <div class="admin-header">
+    <div>
+      <div class="admin-title">🗂️ Gerenciar Fotos</div>
+      <div class="admin-meta" id="adminMeta">Carregando...</div>
+    </div>
+    <button class="logout-btn" id="logoutBtn">Sair</button>
+  </div>
+  <div class="admin-grid" id="adminGrid">
+    <div class="loading-state">
+      <span class="spin">⏳</span>
+      Carregando fotos...
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CONFIRMAÇÃO -->
+<div class="confirm-overlay" id="confirmOverlay">
+  <div class="confirm-card">
+    <div class="confirm-icon">🗑️</div>
+    <div class="confirm-title">Apagar foto?</div>
+    <div class="confirm-sub" id="confirmFileName"></div>
+    <div class="confirm-btns">
+      <button class="confirm-cancel" id="confirmCancel">Cancelar</button>
+      <button class="confirm-delete" id="confirmDelete">Apagar</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOASTS -->
+<div class="toast-container" id="toastContainer"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  // ── CONFIG ──
+  const SUPABASE_URL    = "https://qttansxigwchcojwisau.supabase.co";
+  const SUPABASE_KEY    = "sb_publishable_CDY-I7zP9OcKMZ-ZagSZKw_HxBli5Ki";
+  const ADMIN_PASSWORD  = "Megasenha";
+
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  // ── ELEMENTOS ──
+  const loginWrap       = document.getElementById("loginWrap");
+  const adminWrap       = document.getElementById("adminWrap");
+  const passwordInput   = document.getElementById("passwordInput");
+  const loginBtn        = document.getElementById("loginBtn");
+  const loginError      = document.getElementById("loginError");
+  const logoutBtn       = document.getElementById("logoutBtn");
+  const adminGrid       = document.getElementById("adminGrid");
+  const adminMeta       = document.getElementById("adminMeta");
+  const confirmOverlay  = document.getElementById("confirmOverlay");
+  const confirmFileName = document.getElementById("confirmFileName");
+  const confirmCancel   = document.getElementById("confirmCancel");
+  const confirmDelete   = document.getElementById("confirmDelete");
+  const toastContainer  = document.getElementById("toastContainer");
+
+  // ── ESTADO ──
+  let arquivoParaDeletar  = null;
+  let elementoParaDeletar = null;
+
+  // ── TOAST ──
+  function showToast(msg, type = "success") {
+    const t = document.createElement("div");
+    t.className = `toast ${type}`;
+    t.textContent = msg;
+    toastContainer.appendChild(t);
+    setTimeout(() => t.remove(), 3500);
+  }
+
+  // ── LOGIN ──
+  function tentarLogin() {
+    if (passwordInput.value === ADMIN_PASSWORD) {
+      sessionStorage.setItem("adminAuth", "1");
+      entrarNoAdmin();
+    } else {
+      loginError.classList.add("show");
+      passwordInput.value = "";
+      passwordInput.focus();
+    }
+  }
+
+  loginBtn.addEventListener("click", tentarLogin);
+  passwordInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") tentarLogin();
+  });
+
+  // ── LOGOUT ──
+  logoutBtn.addEventListener("click", () => {
+    sessionStorage.removeItem("adminAuth");
+    adminWrap.classList.remove("show");
+    loginWrap.style.display = "flex";
+    passwordInput.value = "";
+  });
+
+  // ── ENTRAR NO PAINEL ──
+  function entrarNoAdmin() {
+    loginWrap.style.display = "none";
+    adminWrap.classList.add("show");
+    carregarFotos();
+  }
+
+  // ── CARREGAR FOTOS ──
+  async function carregarFotos() {
+    adminGrid.innerHTML = `
+      <div class="loading-state">
+        <span class="spin">⏳</span>
+        Carregando fotos...
+      </div>`;
+
+    const { data, error } = await sb.storage
+      .from("fotos")
+      .list("", { sortBy: { column: "created_at", order: "desc" } });
+
+    if (error) {
+      showToast("Erro ao carregar: " + error.message, "error");
+      return;
+    }
+
+    const arquivos = (data || []).filter(f => f.name.includes(".") && f.name !== ".emptyFolderPlaceholder");
+
+    adminMeta.textContent = `${arquivos.length} ${arquivos.length === 1 ? "item" : "itens"} no álbum`;
+
+    if (arquivos.length === 0) {
+      adminGrid.innerHTML = `<div class="empty-state">📭 Nenhuma foto no álbum ainda.</div>`;
+      return;
+    }
+
+    adminGrid.innerHTML = "";
+
+    for (const arquivo of arquivos) {
+      const { data: urlData } = sb.storage.from("fotos").getPublicUrl(arquivo.name);
+      const ext = arquivo.name.split(".").pop().toLowerCase();
+      const isVideo = ["mp4", "mov", "webm"].includes(ext);
+
+      const partes = arquivo.name.split("_");
+      const nomeExibido = partes.length > 1
+        ? partes.slice(1).join(" ").replace("." + ext, "")
+        : arquivo.name;
+
+      const item = document.createElement("div");
+      item.className = "admin-item";
+
+      item.innerHTML = `
+        ${isVideo
+          ? `<video src="${urlData.publicUrl}" muted playsinline></video>
+             <span class="video-badge">▶ Vídeo</span>`
+          : `<img src="${urlData.publicUrl}" loading="lazy">`
+        }
+        <div class="admin-item-info">
+          <div class="admin-item-name">${nomeExibido || arquivo.name}</div>
+        </div>
+        <button class="delete-btn" title="Apagar">🗑️</button>
+      `;
+
+      // passa a referência direta do elemento
+      item.querySelector(".delete-btn").addEventListener("click", () => {
+        abrirConfirmacao(arquivo.name, item);
+      });
+
+      adminGrid.appendChild(item);
+    }
+  }
+
+  // ── MODAL CONFIRMAÇÃO ──
+  function abrirConfirmacao(nomeArquivo, elemento) {
+    arquivoParaDeletar  = nomeArquivo;
+    elementoParaDeletar = elemento;
+    confirmFileName.textContent = nomeArquivo;
+    confirmOverlay.classList.add("open");
+  }
+
+  confirmCancel.addEventListener("click", () => {
+    confirmOverlay.classList.remove("open");
+    arquivoParaDeletar  = null;
+    elementoParaDeletar = null;
+  });
+
+  confirmDelete.addEventListener("click", async () => {
+    if (!arquivoParaDeletar) return;
+
+    confirmDelete.textContent = "Apagando...";
+    confirmDelete.disabled = true;
+
+    const { error } = await sb.storage
+      .from("fotos")
+      .remove([arquivoParaDeletar]);
+
+    confirmOverlay.classList.remove("open");
+    confirmDelete.textContent = "Apagar";
+    confirmDelete.disabled = false;
+
+    if (error) {
+      showToast("Erro ao apagar: " + error.message, "error");
+    } else {
+      // remove diretamente pelo elemento — sem depender de ID
+      elementoParaDeletar?.remove();
+      showToast("Foto apagada com sucesso ✓");
+
+      const restantes = adminGrid.querySelectorAll(".admin-item").length;
+      adminMeta.textContent = `${restantes} ${restantes === 1 ? "item" : "itens"} no álbum`;
+
+      if (restantes === 0) {
+        adminGrid.innerHTML = `<div class="empty-state">📭 Nenhuma foto no álbum ainda.</div>`;
+      }
+    }
+
+    arquivoParaDeletar  = null;
+    elementoParaDeletar = null;
+  });
+
+  // ── VERIFICAR SESSÃO ──
+  if (sessionStorage.getItem("adminAuth") === "1") {
+    entrarNoAdmin();
+  }
+</script>
+</body>
+</html>
