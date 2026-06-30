@@ -26,6 +26,25 @@ const toastContainer = document.getElementById("toastContainer");
 
 let arquivoSelecionado = null;
 
+// ── EFEITO RIPPLE ──
+function createRipple(event) {
+  if (!event.target.closest("button")) return;
+  const btn = event.target.closest("button");
+  const ripple = document.createElement("span");
+  const rect = btn.getBoundingClientRect();
+  const size = Math.max(rect.width, rect.height);
+  const x = event.clientX - rect.left - size / 2;
+  const y = event.clientY - rect.top - size / 2;
+
+  ripple.style.width = ripple.style.height = size + "px";
+  ripple.style.left = x + "px";
+  ripple.style.top = y + "px";
+  ripple.className = "ripple";
+  btn.appendChild(ripple);
+
+  setTimeout(() => ripple.remove(), 600);
+}
+
 // Login anônimo
 async function loginAnonimo() {
   const { data: { session } } = await sb.auth.getSession();
@@ -43,12 +62,36 @@ function showToast(msg, type = "success") {
   const t = document.createElement("div");
   t.className = `toast ${type}`;
   t.textContent = msg;
+  t.style.animation = "toast-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)";
   toastContainer.appendChild(t);
-  setTimeout(() => t.remove(), 3500);
+  setTimeout(() => {
+    t.style.opacity = "0";
+    t.style.transform = "translateY(20px)";
+    t.style.transition = "all 0.3s ease";
+    setTimeout(() => t.remove(), 300);
+  }, 3500);
 }
 
+// ── EFEITO LIQUID GLASS NO UPLOAD CARD ──
+const dropZone = document.getElementById("dropZone");
+dropZone.addEventListener("mousemove", (e) => {
+  const rect = dropZone.getBoundingClientRect();
+  const x = ((e.clientX - rect.left) / rect.width) * 100;
+  const y = ((e.clientY - rect.top) / rect.height) * 100;
+  dropZone.style.setProperty("--mouse-x", x + "%");
+  dropZone.style.setProperty("--mouse-y", y + "%");
+});
+
+dropZone.addEventListener("mouseleave", () => {
+  dropZone.style.setProperty("--mouse-x", "50%");
+  dropZone.style.setProperty("--mouse-y", "50%");
+});
+
 // ── ABRIR SELETOR DE ARQUIVOS ──
-cameraBtn.addEventListener("click", () => fileInput.click());
+cameraBtn.addEventListener("click", (e) => {
+  createRipple(e);
+  fileInput.click();
+});
 
 // ── PREVIEW AO SELECIONAR ARQUIVO ──
 fileInput.addEventListener("change", () => {
@@ -63,9 +106,11 @@ fileInput.addEventListener("change", () => {
   if (arquivoSelecionado.type.startsWith("image")) {
     previewImg.src = url;
     previewImg.style.display = "block";
+    previewImg.style.animation = "fade-in 0.5s ease";
   } else {
     previewVid.src = url;
     previewVid.style.display = "block";
+    previewVid.style.animation = "fade-in 0.5s ease";
   }
 
   previewWrap.classList.add("show");
@@ -83,7 +128,8 @@ clearPreview.addEventListener("click", () => {
 });
 
 // ── ENVIAR ──
-sendBtn.addEventListener("click", async () => {
+sendBtn.addEventListener("click", async (e) => {
+  createRipple(e);
   if (!arquivoSelecionado) return;
   await loginAnonimo();
 
@@ -159,6 +205,9 @@ function adicionarItemNaGaleria(url, tipo, nome, owner_id, id, nome_arquivo) {
 
   const item = document.createElement("div");
   item.className = "grid-item";
+  item.style.opacity = "0";
+  item.style.transform = "scale(0.9) translateY(20px)";
+  item.style.transition = "all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)";
 
   const isVideo = tipo.startsWith("video");
 
@@ -192,6 +241,12 @@ function adicionarItemNaGaleria(url, tipo, nome, owner_id, id, nome_arquivo) {
 
   item.addEventListener("click", () => abrirLightbox(url, isVideo, nome));
   gallery.prepend(item);
+
+  // Trigger animação
+  requestAnimationFrame(() => {
+    item.style.opacity = "1";
+    item.style.transform = "scale(1) translateY(0)";
+  });
 }
 
 // ── ATUALIZAR CONTADOR ──
