@@ -74,30 +74,35 @@ function showToast(msg, type = "success") {
 
 // ── EFEITO LIQUID GLASS NO UPLOAD CARD ──
 const dropZone = document.getElementById("dropZone");
-dropZone.addEventListener("mousemove", (e) => {
-  const rect = dropZone.getBoundingClientRect();
-  const x = ((e.clientX - rect.left) / rect.width) * 100;
-  const y = ((e.clientY - rect.top) / rect.height) * 100;
-  dropZone.style.setProperty("--mouse-x", x + "%");
-  dropZone.style.setProperty("--mouse-y", y + "%");
-});
+if (dropZone) {
+  dropZone.addEventListener("mousemove", (e) => {
+    const rect = dropZone.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    dropZone.style.setProperty("--mouse-x", x + "%");
+    dropZone.style.setProperty("--mouse-y", y + "%");
+  });
 
-dropZone.addEventListener("mouseleave", () => {
-  dropZone.style.setProperty("--mouse-x", "50%");
-  dropZone.style.setProperty("--mouse-y", "50%");
-});
+  dropZone.addEventListener("mouseleave", () => {
+    dropZone.style.setProperty("--mouse-x", "50%");
+    dropZone.style.setProperty("--mouse-y", "50%");
+  });
+}
 
 // ── ABRIR SELETOR DE ARQUIVOS ──
-cameraBtn.addEventListener("click", (e) => {
-  createRipple(e);
-  fileInput.click();
-});
+if (cameraBtn) {
+  cameraBtn.addEventListener("click", (e) => {
+    createRipple(e);
+    fileInput.click();
+  });
+}
 
 // ── PREVIEW AO SELECIONAR ARQUIVO ──
-fileInput.addEventListener("change", () => {
-  if (!fileInput.files.length) return;
+if (fileInput) {
+  fileInput.addEventListener("change", () => {
+    if (!fileInput.files.length) return;
 
-  arquivoSelecionado = fileInput.files[0];
+    arquivoSelecionado = fileInput.files[0];
   const url = URL.createObjectURL(arquivoSelecionado);
 
   previewImg.style.display = "none";
@@ -115,20 +120,24 @@ fileInput.addEventListener("change", () => {
 
   previewWrap.classList.add("show");
   sendBtn.disabled = false;
-});
+  });
+}
 
 // ── LIMPAR PREVIEW ──
-clearPreview.addEventListener("click", () => {
+if (clearPreview) {
+  clearPreview.addEventListener("click", () => {
   arquivoSelecionado = null;
   fileInput.value = "";
   previewImg.src = "";
   previewVid.src = "";
   previewWrap.classList.remove("show");
   sendBtn.disabled = true;
-});
+  });
+}
 
 // ── ENVIAR ──
-sendBtn.addEventListener("click", async (e) => {
+if (sendBtn) {
+  sendBtn.addEventListener("click", async (e) => {
   createRipple(e);
   if (!arquivoSelecionado) return;
   await loginAnonimo();
@@ -145,10 +154,14 @@ sendBtn.addEventListener("click", async (e) => {
   const { data: { user } } = await sb.auth.getUser();
   const caminho = `${user.id}/${nomeArquivo}`;
 
+  console.log("Iniciando upload...", { caminho, tamanho: arquivoSelecionado.size, tipo: arquivoSelecionado.type });
+
   // Upload no Storage
   const { error } = await sb.storage
     .from("fotos")
     .upload(caminho, arquivoSelecionado);
+
+  console.log("Resultado upload:", { error });
 
   if (error) {
     showToast("Erro no Storage: " + error.message, "error");
@@ -162,6 +175,15 @@ sendBtn.addEventListener("click", async (e) => {
 
   // Obter URL pública
   const { data: urlData } = sb.storage.from("fotos").getPublicUrl(caminho);
+  
+  console.log("URL Pública:", urlData);
+
+  if (!urlData?.publicUrl) {
+    showToast("Erro ao gerar URL da foto", "error");
+    sendBtn.disabled = false;
+    progressWrap.classList.remove("show");
+    return;
+  }
   
   // Inserção na tabela do Banco de Dados
   const { data: foto, error: insertError } = await sb
@@ -197,7 +219,8 @@ sendBtn.addEventListener("click", async (e) => {
   previewVid.src = "";
   previewWrap.classList.remove("show");
   sendBtn.disabled = true;
-});
+  });
+}
 
 // ── ADICIONAR ITEM NA GALERIA ──
 function adicionarItemNaGaleria(url, tipo, nome, owner_id, id, nome_arquivo) {
@@ -266,11 +289,13 @@ async function carregarGaleria() {
 
   if (error) {
     showToast("Erro ao carregar galeria", "error");
-    console.error(error);
+    console.error("Erro galeria:", error);
     return;
   }
 
   const arquivos = (data || []);
+  console.log("Arquivos carregados:", arquivos);
+  
   if (arquivos.length === 0) return;
 
   document.getElementById("emptyState")?.remove();
@@ -278,9 +303,13 @@ async function carregarGaleria() {
   totalFotos = 0;
 
   for (const arquivo of arquivos) {
+    console.log("Processando arquivo:", arquivo);
+    
     const { data: urlData } = sb.storage
       .from("fotos")
       .getPublicUrl(arquivo.nome_arquivo);
+    
+    console.log("URL pública gerada:", urlData);
       
     const ext = arquivo.nome_arquivo.split(".").pop().toLowerCase();
     const tipo = ["mp4", "mov", "webm"].includes(ext) ? "video/mp4" : "image/jpeg";
@@ -339,17 +368,21 @@ function abrirLightbox(url, isVideo, nome) {
   lightbox.classList.add("open");
 }
 
-lightboxClose.addEventListener("click", () => {
-  lightbox.classList.remove("open");
-  lightboxInner.innerHTML = "";
-});
-
-lightbox.addEventListener("click", (e) => {
-  if (e.target === lightbox) {
+if (lightboxClose) {
+  lightboxClose.addEventListener("click", () => {
     lightbox.classList.remove("open");
     lightboxInner.innerHTML = "";
-  }
-});
+  });
+}
+
+if (lightbox) {
+  lightbox.addEventListener("click", (e) => {
+    if (e.target === lightbox) {
+      lightbox.classList.remove("open");
+      lightboxInner.innerHTML = "";
+    }
+  });
+}
 
 // ── INIT ──
 carregarGaleria();

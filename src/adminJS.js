@@ -22,6 +22,7 @@
 
   // ── ESTADO ──
   let arquivoParaDeletar  = null;
+  let idParaDeletar       = null;
   let elementoParaDeletar = null;
 
   // ── TOAST ──
@@ -73,16 +74,21 @@
         Carregando fotos...
       </div>`;
 
-    const { data, error } = await sb.storage
+    // Carregar da tabela do banco de dados (como o index faz)
+    const { data, error } = await sb
       .from("fotos")
-      .list("", { sortBy: { column: "created_at", order: "desc" } });
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    console.log("Carregando fotos...", { data, error });
 
     if (error) {
+      console.error("Erro detalhado:", error);
       showToast("Erro ao carregar: " + error.message, "error");
       return;
     }
 
-    const arquivos = (data || []).filter(f => f.name.includes(".") && f.name !== ".emptyFolderPlaceholder");
+    const arquivos = (data || []);
 
     adminMeta.textContent = `${arquivos.length} ${arquivos.length === 1 ? "item" : "itens"} no álbum`;
 
@@ -94,14 +100,15 @@
     adminGrid.innerHTML = "";
 
     for (const arquivo of arquivos) {
-      const { data: urlData } = sb.storage.from("fotos").getPublicUrl(arquivo.name);
-      const ext = arquivo.name.split(".").pop().toLowerCase();
+      const { data: urlData } = sb.storage.from("fotos").getPublicUrl(arquivo.nome_arquivo);
+      const ext = arquivo.nome_arquivo.split(".").pop().toLowerCase();
       const isVideo = ["mp4", "mov", "webm"].includes(ext);
 
-      const partes = arquivo.name.split("_");
+      const nomeArquivo = arquivo.nome_arquivo.split("/").pop();
+      const partes = nomeArquivo.split("_");
       const nomeExibido = partes.length > 1
-        ? partes.slice(1).join(" ").replace("." + ext, "")
-        : arquivo.name;
+        ? partes.slice(1).join("_").replace("." + ext, "").replace(/_/g, " ")
+        : nomeArquivo;
 
       const item = document.createElement("div");
       item.className = "admin-item";
@@ -113,14 +120,14 @@
           : `<img src="${urlData.publicUrl}" loading="lazy">`
         }
         <div class="admin-item-info">
-          <div class="admin-item-name">${nomeExibido || arquivo.name}</div>
+          <div class="admin-item-name">${nomeExibido || nomeArquivo}</div>
         </div>
         <button class="delete-btn" title="Apagar">🗑️</button>
       `;
 
-      // passa a referência direta do elemento
+      // passa o ID do banco para deletar corretamente
       item.querySelector(".delete-btn").addEventListener("click", () => {
-        abrirConfirmacao(arquivo.name, item);
+        abrirConfirmacao(arquivo.nome_arquivo, arquivo.id, item);
       });
 
       adminGrid.appendChild(item);
@@ -128,8 +135,9 @@
   }
 
   // ── MODAL CONFIRMAÇÃO ──
-  function abrirConfirmacao(nomeArquivo, elemento) {
+  function abrirConfirmacao(nomeArquivo, id, elemento) {
     arquivoParaDeletar  = nomeArquivo;
+    idParaDeletar       = id;
     elementoParaDeletar = elemento;
     confirmFileName.textContent = nomeArquivo;
     confirmOverlay.classList.add("open");
@@ -138,16 +146,24 @@
   confirmCancel.addEventListener("click", () => {
     confirmOverlay.classList.remove("open");
     arquivoParaDeletar  = null;
+    idParaDeletar       = null;
     elementoParaDeletar = null;
   });
 
   confirmDelete.addEventListener("click", async () => {
-    if (!arquivoParaDeletar) return;
+    if (!arquivoParaDeletar || !idParaDeletar) return;
 
     confirmDelete.textContent = "Apagando...";
     confirmDelete.disabled = true;
 
-    const { error } = await sb.storage
+    // Deleta do banco de dados
+    const { error: dbError } = await sb
+      .from("fotos")
+      .delete()
+      .eq("id", idParaDeletar);
+
+    // Deleta do storage
+    const { error: storageError } = await sb.storage
       .from("fotos")
       .remove([arquivoParaDeletar]);
 
@@ -155,10 +171,9 @@
     confirmDelete.textContent = "Apagar";
     confirmDelete.disabled = false;
 
-    if (error) {
-      showToast("Erro ao apagar: " + error.message, "error");
+    if (dbError || storageError) {
+      showToast("Erro ao apagar: " + (dbError?.message || storageError?.message), "error");
     } else {
-      // remove diretamente pelo elemento — sem depender de ID
       elementoParaDeletar?.remove();
       showToast("Foto apagada com sucesso ✓");
 
@@ -171,6 +186,7 @@
     }
 
     arquivoParaDeletar  = null;
+    idParaDeletar       = null;
     elementoParaDeletar = null;
   });
 
