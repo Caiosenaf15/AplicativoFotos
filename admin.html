@@ -2,18 +2,31 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0B0512">
+<title>Admin · Maria 15 anos</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="src/adminJS.js" defer type="module"></script>
 <link rel="stylesheet" href="src/adminStyle.css">
-<title>Admin — Nossa Festa</title>
 </head>
 <body>
 
+<div class="bg-stage" aria-hidden="true">
+  <div class="bg-orb orb-1"></div>
+  <div class="bg-orb orb-2"></div>
+</div>
+
 <!-- LOGIN -->
 <div class="login-wrap" id="loginWrap">
-  <div class="login-card">
-    <div class="login-icon">🔐</div>
+  <div class="login-card glass">
+    <div class="login-icon">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M7 10.5V8a5 5 0 0 1 10 0v2.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><rect x="5" y="10.5" width="14" height="10" rx="3" stroke="currentColor" stroke-width="1.7"/><circle cx="12" cy="15" r="1.6" fill="currentColor"/></svg>
+    </div>
     <div class="login-title">Área Admin</div>
     <div class="login-sub">Digite a senha para gerenciar as fotos</div>
     <input
@@ -30,16 +43,16 @@
 
 <!-- PAINEL ADMIN -->
 <div class="admin-wrap" id="adminWrap">
-  <div class="admin-header">
-    <div>
-      <div class="admin-title">🗂️ Gerenciar Fotos</div>
+  <div class="admin-header glass">
+    <div class="admin-header-text">
+      <div class="admin-title">Gerenciar fotos</div>
       <div class="admin-meta" id="adminMeta">Carregando...</div>
     </div>
     <button class="logout-btn" id="logoutBtn">Sair</button>
   </div>
   <div class="admin-grid" id="adminGrid">
     <div class="loading-state">
-      <span class="spin">⏳</span>
+      <span class="spin"></span>
       Carregando fotos...
     </div>
   </div>
@@ -47,8 +60,10 @@
 
 <!-- MODAL CONFIRMAÇÃO -->
 <div class="confirm-overlay" id="confirmOverlay">
-  <div class="confirm-card">
-    <div class="confirm-icon">🗑️</div>
+  <div class="confirm-card glass">
+    <div class="confirm-icon">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M4 7H20M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M18 7l-.8 12.1A2 2 0 0 1 15.2 21H8.8a2 2 0 0 1-2-1.9L6 7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
     <div class="confirm-title">Apagar foto?</div>
     <div class="confirm-sub" id="confirmFileName"></div>
     <div class="confirm-btns">

@@ -2,100 +2,127 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#2a1140">
+<title>Maria · 15 anos</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="src/indexJS.js" defer type="module"></script>
 <link rel="stylesheet" href="src/indexStyle.css">
-<title>Maria 15 anos</title>
-
 </head>
 <body>
+
+<!-- Fundo líquido -->
+<div class="bg-stage" aria-hidden="true">
+  <div class="bg-orb orb-1"></div>
+  <div class="bg-orb orb-2"></div>
+  <div class="bg-orb orb-3"></div>
+  <div class="bg-orb orb-4"></div>
+  <div class="bg-grain"></div>
+</div>
+
 <header>
   <div class="header-content">
+    <div class="eyebrow glass-pill">✦ Você está convidado a registrar tudo</div>
     <h1 class="party-title" id="partyTitle">
       <span class="title-name">Maria</span>
-      <span class="title-number">15 anos</span>
-      <span class="title-emoji">🎂</span>
+      <span class="title-number">15</span>
+      <span class="title-suffix">anos</span>
     </h1>
-    <div class="party-subtitle">Registre e compartilhe os momentos mais especiais</div>
-    <div class="live-badge">
+    <p class="party-subtitle">Registre e compartilhe os momentos mais especiais da festa</p>
+    <div class="live-badge glass-pill">
       <span class="live-dot"></span>
-      <span id="onlineCount">0</span> fotos
+      <span id="onlineCount">0</span>&nbsp;fotos no álbum
     </div>
   </div>
 </header>
 
-<div class="upload-section">
-  <div class="upload-card" id="dropZone">
-    <input 
-      id="fileInput" 
-      type="file" 
-      accept="image/*,video/*" 
-      capture="environment"
-      multiple="false"
-      hidden
-    >
-    <button id="cameraBtn" type="button">
-      <div class="upload-icon">📷</div>
-      <div class="upload-title">Adicionar foto ou vídeo</div>
-      <div class="upload-hint">Toque para abrir a câmera ou galeria</div>
-    </button>
-  </div>
+<main>
+  <section class="upload-section">
+    <div class="upload-card glass" id="dropZone">
+      <input
+        id="fileInput"
+        type="file"
+        accept="image/*,video/*"
+        multiple="false"
+        hidden
+      >
 
-  <div class="preview-wrap" id="previewWrap">
-    <button class="preview-clear" id="clearPreview">✕</button>
-    <img id="previewImg" style="display:none">
-    <video id="previewVid" style="display:none" muted playsinline></video>
-  </div>
+      <div class="shutter-stage">
+        <button id="cameraBtn" type="button" class="shutter-btn" aria-label="Adicionar foto ou vídeo">
+          <span class="shutter-ring"></span>
+          <span class="shutter-icon">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M4 8.5C4 7.11929 5.11929 6 6.5 6H8.17157C8.70201 6 9.21071 5.78929 9.58579 5.41421L10.4142 4.58579C10.7893 4.21071 11.298 4 11.8284 4H12.1716C12.702 4 13.2107 4.21071 13.5858 4.58579L14.4142 5.41421C14.7893 5.78929 15.298 6 15.8284 6H17.5C18.8807 6 20 7.11929 20 8.5V16.5C20 17.8807 18.8807 19 17.5 19H6.5C5.11929 19 4 17.8807 4 16.5V8.5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+              <circle cx="12" cy="12.5" r="3.4" stroke="currentColor" stroke-width="1.6"/>
+            </svg>
+          </span>
+        </button>
+      </div>
 
-  <div class="progress-wrap" id="progressWrap">
-    <div class="progress-bar-bg">
-      <div class="progress-bar-fill" id="progressFill"></div>
+      <div class="upload-copy">
+        <div class="upload-title">Adicionar foto ou vídeo</div>
+        <div class="upload-hint">Toque para escolher, ou arraste um arquivo aqui</div>
+      </div>
     </div>
-    <div class="progress-label" id="progressLabel">Enviando...</div>
-  </div>
 
-  <div class="name-row">
-    <input class="name-input" id="nameInput" type="text" placeholder="Seu nome (opcional)" maxlength="30">
-    <button class="send-btn" id="sendBtn" disabled>Enviar</button>
-  </div>
-</div>
-
-<div class="gallery-section">
-  <div class="gallery-header">
-    <span class="gallery-title">Álbum da festa</span>
-    <span class="photo-count" id="photoCountLabel"></span>
-  </div>
-  <div class="grid" id="gallery">
-    <div class="empty-state" id="emptyState" style="grid-column: 1/-1;">
-      <div class="empty-icon">🎉</div>
-      <p>Seja o primeiro a postar uma foto!</p>
+    <div class="preview-wrap glass" id="previewWrap">
+      <button class="preview-clear" id="clearPreview" aria-label="Remover seleção">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M6 6L18 18M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
+      <img id="previewImg" style="display:none" alt="Pré-visualização">
+      <video id="previewVid" style="display:none" muted playsinline></video>
     </div>
-  </div>
-</div>
+
+    <div class="progress-wrap" id="progressWrap">
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill" id="progressFill"></div>
+      </div>
+      <div class="progress-label" id="progressLabel">Enviando...</div>
+    </div>
+
+    <div class="name-row">
+      <input class="name-input glass" id="nameInput" type="text" placeholder="Seu nome (opcional)" maxlength="30">
+      <button class="send-btn" id="sendBtn" disabled>
+        <span>Enviar</span>
+        <svg viewBox="0 0 24 24" fill="none"><path d="M4.5 12H19.5M19.5 12L13.5 6M19.5 12L13.5 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+  </section>
+
+  <section class="gallery-section">
+    <div class="gallery-header">
+      <span class="gallery-title">Álbum da festa</span>
+      <span class="photo-count glass-pill" id="photoCountLabel"></span>
+    </div>
+    <div class="grid" id="gallery">
+      <div class="empty-state" id="emptyState" style="grid-column: 1/-1;">
+        <div class="empty-icon">🎉</div>
+        <p>Seja o primeiro a postar uma foto!</p>
+      </div>
+    </div>
+  </section>
+</main>
 
 <!-- Lightbox -->
 <div class="lightbox" id="lightbox">
-  <button class="lightbox-close" id="lightboxClose">✕</button>
-  <div class="lightbox-inner" id="lightboxInner"></div>
-  <div class="lightbox-info" id="lightboxInfo"></div>
+  <button class="lightbox-close glass" id="lightboxClose" aria-label="Fechar">
+    <svg viewBox="0 0 24 24" fill="none"><path d="M6 6L18 18M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+  </button>
+  <div class="lightbox-inner glass" id="lightboxInner"></div>
+  <div class="lightbox-info glass-pill" id="lightboxInfo"></div>
 </div>
 
 <!-- Toasts -->
 <div class="toast-container" id="toastContainer"></div>
 
-<footer style="
-  position: relative;
-  z-index: 10;
-  text-align: center;
-  padding: 0 0 32px;
-">
-  <a href="./admin.html" style="
-    font-size: 11px;
-    color: rgba(0, 0, 0, 0.12);
-    text-decoration: none;
-    letter-spacing: 0.05em;
-  ">Admin</a>
+<footer>
+  <a href="./admin.html">Admin</a>
 </footer>
+
 </body>
 </html>
