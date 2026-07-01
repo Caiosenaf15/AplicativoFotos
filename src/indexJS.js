@@ -71,20 +71,8 @@ function showToast(msg, type = "success") {
   }, 3500);
 }
 
-// ── EFEITO LIQUID GLASS (BRILHO SEGUE O CURSOR) ──
+// ── ARRASTAR E SOLTAR ──
 if (dropZone) {
-  dropZone.addEventListener("mousemove", (e) => {
-    const rect = dropZone.getBoundingClientRect();
-    const x = ((e.clientX - rect.left) / rect.width) * 100;
-    const y = ((e.clientY - rect.top) / rect.height) * 100;
-    dropZone.style.setProperty("--mouse-x", x + "%");
-    dropZone.style.setProperty("--mouse-y", y + "%");
-  });
-  dropZone.addEventListener("mouseleave", () => {
-    dropZone.style.setProperty("--mouse-x", "50%");
-    dropZone.style.setProperty("--mouse-y", "20%");
-  });
-
   // ── ARRASTAR E SOLTAR ──
   ["dragenter", "dragover"].forEach(evt =>
     dropZone.addEventListener(evt, (e) => {
