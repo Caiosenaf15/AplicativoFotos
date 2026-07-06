@@ -1,28 +1,49 @@
 # 📸 AplicativoFotos
 
-> Site de compartilhamento de fotos e vídeos em tempo real para festas e eventos — acesse pelo QR Code, tire a foto e ela aparece instantaneamente para todos os convidados.
+> Site de compartilhamento de fotos e vídeos para festas e eventos — os convidados escaneiam um QR Code, enviam suas fotos e elas aparecem instantaneamente no álbum coletivo.
 
 ---
 
 ## ✨ Sobre o projeto
 
-O **AplicativoFotos** é um site responsivo de arquivo único (`festa.html`) inspirado no aplicativo Dots, pensado para ser usado em festas e eventos. O organizador imprime um QR Code e afixa no local — os convidados escaneiam, tiram fotos ou enviam da galeria, e todas as imagens aparecem em tempo real num mural coletivo visível para todo mundo.
+O **AplicativoFotos** foi criado para a festa de 15 anos de Maria. O organizador coloca um QR Code no local do evento; os convidados escaneiam, tiram uma foto ou escolhem da galeria, e a imagem vai direto para o álbum compartilhado — visível para todos em tempo real.
 
-Construído com HTML, CSS e JavaScript puro no front-end, usando **Firebase** (Firestore + Storage) como back-end — sem servidor próprio, sem mensalidade, escalável para centenas de conexões simultâneas.
+Projeto front-end puro (HTML + CSS + JS), sem framework, usando **Supabase** como back-end (banco de dados + storage de arquivos). Inclui também uma **página de administração** com senha para gerenciar e excluir fotos.
+
+---
+
+## 🗂️ Estrutura
+
+```
+AplicativoFotos/
+├── index.html          # Página principal — upload e galeria
+├── admin.html          # Painel de administração (protegido por senha)
+└── src/
+    ├── indexJS.js      # Lógica da página principal (Supabase, upload, galeria)
+    ├── indexStyle.css  # Estilos da página principal (glassmorphism / Liquid Glass)
+    ├── adminJS.js      # Lógica do painel admin (auth, listagem, exclusão)
+    └── adminStyle.css  # Estilos do painel admin
+```
 
 ---
 
 ## 🎯 Funcionalidades
 
-- 📷 **Câmera direta** — botão dedicado que abre a câmera traseira do celular
-- 🖼️ **Upload da galeria** — selecione múltiplos arquivos de uma vez
-- 🗂️ **Fila de upload** — visualize todos os arquivos selecionados antes de enviar, com progresso individual por arquivo
-- ⚡ **Galeria em tempo real** — novas fotos aparecem para todos os convidados sem precisar recarregar a página
-- 🎞️ **Suporte a vídeos** — vídeos fazem preview com hover e abrem no lightbox
-- 🔍 **Lightbox** — clique em qualquer mídia para ver em tela cheia
-- 👤 **Nome do autor** — cada convidado pode identificar suas fotos
-- 📱 **Mobile-first** — otimizado para celular, funciona em iOS e Android
-- 🌙 **Design de festa** — tema escuro com gradiente dourado/rosa/roxo
+**Página principal (`index.html`)**
+- 📷 Botão de câmera para tirar foto ou escolher da galeria
+- 👁️ Preview do arquivo antes de enviar
+- 📤 Upload para o Supabase Storage (limite de 50 MB por arquivo)
+- 🖼️ Galeria com todas as fotos e vídeos enviados
+- 🔍 Lightbox para visualizar em tela cheia (Esc para fechar)
+- 👤 Campo de nome opcional (identificado no arquivo)
+- 🔐 Login anônimo automático via Supabase Auth
+- 🗑️ Convidado pode excluir apenas suas próprias fotos
+
+**Painel admin (`admin.html`)**
+- 🔒 Acesso por senha (definida no código)
+- 📋 Listagem de todas as fotos com thumbnail
+- 🗑️ Exclusão de qualquer foto com confirmação
+- 📊 Contador total de itens
 
 ---
 
@@ -31,153 +52,123 @@ Construído com HTML, CSS e JavaScript puro no front-end, usando **Firebase** (F
 | Tecnologia | Uso |
 |---|---|
 | HTML / CSS / JS puro | Front-end sem frameworks |
-| [Firebase Firestore](https://firebase.google.com/products/firestore) | Banco de dados em tempo real (WebSockets) |
-| [Firebase Storage](https://firebase.google.com/products/storage) | Armazenamento de fotos e vídeos |
-| Firebase SDK v10 (ESM) | Importado via CDN, sem build step |
+| [Supabase](https://supabase.com) | Back-end: banco de dados (PostgreSQL) + Storage |
+| Supabase Auth | Login anônimo automático dos convidados |
+| Supabase JS SDK v2 | Importado via CDN (jsDelivr) |
 
 ---
 
-## 🚀 Como usar
+## ⚙️ Configuração
 
-### 1. Criar projeto no Firebase (gratuito)
+### 1. Criar projeto no Supabase (gratuito)
 
-1. Acesse [console.firebase.google.com](https://console.firebase.google.com)
-2. Clique em **Adicionar projeto** e dê um nome (ex: `festa-maria`)
-3. Ative o **Cloud Firestore** → *Criar banco de dados* → **Modo de teste**
-4. Ative o **Storage** → *Começar* → **Modo de teste**
-5. Vá em **Configurações do Projeto** (⚙️) → **Geral** → **Seus apps** → clique em `</>` (Web)
-6. Registre o app e copie o objeto `firebaseConfig`
+1. Acesse [supabase.com](https://supabase.com) e crie um projeto
+2. Crie uma tabela `fotos` no banco com a estrutura abaixo
+3. Crie um bucket de Storage chamado `fotos` com acesso público
+4. Copie a **URL** e a **anon key** do projeto
 
-### 2. Configurar o arquivo
+**SQL para criar a tabela:**
+```sql
+create table fotos (
+  id uuid primary key default gen_random_uuid(),
+  owner_id uuid references auth.users(id),
+  nome_arquivo text not null,
+  created_at timestamptz default now()
+);
 
-Abra o `festa.html` e substitua o bloco de configuração no início do script:
+-- Habilitar RLS
+alter table fotos enable row level security;
 
-```js
-const firebaseConfig = {
-  apiKey: "SUA_API_KEY",
-  authDomain: "SEU_PROJETO.firebaseapp.com",
-  projectId: "SEU_PROJETO",
-  storageBucket: "SEU_PROJETO.appspot.com",
-  messagingSenderId: "SEU_SENDER_ID",
-  appId: "SEU_APP_ID"
-};
+-- Qualquer um pode ler
+create policy "Leitura pública" on fotos for select using (true);
+
+-- Usuário logado pode inserir
+create policy "Inserir próprias" on fotos for insert
+  with check (auth.uid() = owner_id);
+
+-- Usuário só apaga as próprias
+create policy "Apagar próprias" on fotos for delete
+  using (auth.uid() = owner_id);
 ```
 
-Também personalize o nome da festa:
+**Política do Storage (bucket `fotos`):**
+```sql
+-- Leitura pública
+create policy "Leitura pública storage" on storage.objects
+  for select using (bucket_id = 'fotos');
 
-```js
-const PARTY_NAME = "Nome da Sua Festa ✨";
+-- Upload para usuários autenticados
+create policy "Upload autenticado" on storage.objects
+  for insert with check (
+    bucket_id = 'fotos' and auth.role() = 'authenticated'
+  );
+
+-- Dono pode apagar
+create policy "Apagar próprio" on storage.objects
+  for delete using (
+    bucket_id = 'fotos' and auth.uid()::text = (storage.foldername(name))[1]
+  );
 ```
 
-### 3. Hospedar o site
+### 2. Configurar as credenciais
 
-Qualquer hospedagem estática funciona. As opções gratuitas recomendadas:
+Abra `src/indexJS.js` e `src/adminJS.js` e substitua:
 
-- **Firebase Hosting** — `firebase deploy` após instalar a CLI
-- **GitHub Pages** — suba o `festa.html` como `index.html` no repositório e ative Pages nas configurações
-- **Netlify / Vercel** — arraste o arquivo para o painel
+```js
+const SUPABASE_URL = "https://SEU_PROJETO.supabase.co";
+const SUPABASE_KEY = "SUA_ANON_KEY";
+```
+
+Em `src/adminJS.js`, troque também a senha do painel:
+
+```js
+const ADMIN_PASSWORD = "sua_senha_aqui";
+```
+
+### 3. Hospedar
+
+Qualquer hospedagem estática funciona:
+
+- **GitHub Pages** — ative em *Settings → Pages → Branch: main*
+- **Netlify** — arraste a pasta para [app.netlify.com](https://app.netlify.com)
+- **Vercel** — importe o repositório e faça deploy
 
 ### 4. Gerar o QR Code
 
-Com o link do site em mãos, gere o QR Code em qualquer gerador gratuito:
+Com o link em mãos, gere o QR Code em:
 - [qr-code-generator.com](https://www.qr-code-generator.com)
 - [goqr.me](https://goqr.me)
 
-Imprima e cole em mesas, paredes ou na entrada da festa.
+Imprima e distribua no evento!
 
 ---
 
-## 📂 Estrutura do projeto
-
-```
-AplicativoFotos/
-└── festa.html      # Aplicação completa em arquivo único
-```
-
-O projeto é intencionalmente um arquivo único — fácil de hospedar, editar e distribuir.
-
----
-
-## 🔒 Regras de segurança Firebase (recomendado para produção)
-
-O modo de teste permite leitura e escrita abertas por 30 dias. Para a festa, isso é suficiente. Se quiser restringir após o evento, atualize as regras no Firestore e Storage:
-
-**Firestore** (`Firestore > Regras`):
-```js
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /photos/{doc} {
-      allow read: if true;
-      allow write: if request.resource.data.keys().hasAll(['url','name','type','createdAt']);
-    }
-  }
-}
-```
-
-**Storage** (`Storage > Regras`):
-```js
-rules_version = '2';
-service firebase.storage {
-  match /b/{bucket}/o {
-    match /festa/{allPaths=**} {
-      allow read: if true;
-      allow write: if request.resource.size < 100 * 1024 * 1024
-                   && (request.resource.contentType.matches('image/.*')
-                    || request.resource.contentType.matches('video/.*'));
-    }
-  }
-}
-```
-
----
-
-## 📊 Limites do plano gratuito Firebase (Spark)
+## 📊 Limites do plano gratuito Supabase
 
 | Recurso | Limite gratuito |
 |---|---|
-| Firestore — leituras | 50.000 / dia |
-| Firestore — gravações | 20.000 / dia |
-| Storage | 5 GB armazenado |
-| Storage — download | 1 GB / dia |
-| Conexões simultâneas | Sem limite fixo (WebSockets) |
+| Storage | 1 GB |
+| Transferência (bandwidth) | 2 GB / mês |
+| Requisições de banco | 500 MB de dados |
+| Usuários anônimos | Ilimitado |
+| Projetos ativos | 2 |
 
-Para uma festa de até ~300 pessoas, o plano gratuito é mais que suficiente.
+Para uma festa de centenas de pessoas, o plano gratuito é suficiente.
 
 ---
 
-## 🖼️ Preview
+## 🎨 Design
 
-```
-┌─────────────────────────────────────┐
-│  Nossa Festa ✨                      │
-│  Registre e compartilhe os momentos │
-│  ● AO VIVO · 42 fotos               │
-│                                     │
-│  [📷 Tirar foto] [🖼️ Galeria]       │
-│                                     │
-│  ┌──┐ ┌──┐ ┌──┐   ← fila de upload  │
-│  │✅│ │⏳│ │  │                     │
-│  └──┘ └──┘ └──┘                     │
-│                                     │
-│  [Seu nome]           [Enviar →]    │
-│                                     │
-│  ╔════╦════╦════╦════╗              │
-│  ║foto║foto║foto║foto║  ← galeria   │
-│  ╠════╬════╬════╬════╣  em tempo   │
-│  ║foto║foto║foto║foto║  real        │
-│  ╚════╩════╩════╩════╝              │
-└─────────────────────────────────────┘
-```
+O projeto usa uma estética **Liquid Glass** — efeito de glassmorphism com orbs de cor animados no fundo, inspirado no iOS 26. Paleta roxa/vinho, tipografia Inter, visual mobile-first.
 
 ---
 
 ## 👨‍💻 Autor
 
-**Caio** — estudante de Sistemas de Informação no CEFET/RJ (campus Nova Friburgo)
+**Caio** — Sistemas de Informação · CEFET/RJ (campus Nova Friburgo)
 
 ---
 
 ## 📄 Licença
 
-Este projeto está sob a licença MIT. Sinta-se à vontade para usar, modificar e distribuir.
+MIT — fique à vontade para usar, adaptar e distribuir.
