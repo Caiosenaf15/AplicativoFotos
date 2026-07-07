@@ -29,9 +29,30 @@ const toastContainer  = document.getElementById("toastContainer");
 const MAX_SIZE_MB = 50;
 const MAX_ARQUIVOS = 20; // limite de segurança por envio
 
-// Lista de arquivos selecionados: [{ file, url, id }]
+// Lista de arquivos selecionados: [{ file, url, id, tipo: "image"|"video" }]
 let arquivosSelecionados = [];
 let idSeq = 0;
+
+// ── DETECÇÃO DE TIPO (com reforço por extensão) ──
+// Alguns celulares/navegadores entregam file.type vazio (comum com HEIC do
+// iPhone, ou arquivos escolhidos via Google Fotos/gerenciador de arquivos no
+// Android). Por isso não confiamos só no MIME type: também olhamos a extensão.
+const EXT_IMAGEM = ["jpg","jpeg","png","gif","webp","heic","heif","bmp","tiff","tif","avif"];
+const EXT_VIDEO  = ["mp4","mov","webm","m4v","avi","mkv","3gp","3gpp","hevc","mpeg","mpg"];
+
+function extensaoDe(nomeArquivo) {
+  const m = /\.([a-z0-9]+)$/i.exec(nomeArquivo || "");
+  return m ? m[1].toLowerCase() : "";
+}
+
+function detectarTipo(file) {
+  const ext = extensaoDe(file.name);
+  if (file.type && file.type.startsWith("image")) return "image";
+  if (file.type && file.type.startsWith("video")) return "video";
+  if (EXT_IMAGEM.includes(ext)) return "image";
+  if (EXT_VIDEO.includes(ext)) return "video";
+  return null; // tipo não reconhecido
+}
 
 // ── EFEITO RIPPLE ──
 function createRipple(event) {
@@ -107,45 +128,56 @@ if (cameraBtn) {
 // Aceita FileList ou array de File. Os arquivos válidos são ADICIONADOS
 // à seleção atual, permitindo escolher em mais de uma vez.
 function selecionarArquivos(fileList) {
-  const arquivos = Array.from(fileList);
-  let adicionados = 0;
-  let rejeitadosTipo = 0;
-  let rejeitadosTamanho = 0;
+  try {
+    const arquivos = Array.from(fileList);
 
-  for (const file of arquivos) {
-    if (arquivosSelecionados.length + adicionados >= MAX_ARQUIVOS) {
-      showToast(`Máximo de ${MAX_ARQUIVOS} arquivos por envio`, "error");
-      break;
+    if (arquivos.length === 0) return;
+
+    let adicionados = 0;
+    let rejeitadosTipo = 0;
+    let rejeitadosTamanho = 0;
+
+    for (const file of arquivos) {
+      if (arquivosSelecionados.length + adicionados >= MAX_ARQUIVOS) {
+        showToast(`Máximo de ${MAX_ARQUIVOS} arquivos por envio`, "error");
+        break;
+      }
+
+      const tipo = detectarTipo(file);
+      if (!tipo) {
+        rejeitadosTipo++;
+        console.warn("Arquivo ignorado (tipo não reconhecido):", file.name, file.type);
+        continue;
+      }
+      if (file.size > MAX_SIZE_MB * 1024 * 1024) {
+        rejeitadosTamanho++;
+        continue;
+      }
+
+      const url = URL.createObjectURL(file);
+      arquivosSelecionados.push({ file, url, id: ++idSeq, tipo });
+      adicionados++;
     }
 
-    if (!file.type.startsWith("image") && !file.type.startsWith("video")) {
-      rejeitadosTipo++;
-      continue;
+    if (rejeitadosTipo > 0) {
+      showToast("Alguns arquivos foram ignorados (formato não reconhecido)", "error");
     }
-    if (file.size > MAX_SIZE_MB * 1024 * 1024) {
-      rejeitadosTamanho++;
-      continue;
+    if (rejeitadosTamanho > 0) {
+      showToast(`Alguns arquivos passaram de ${MAX_SIZE_MB}MB e foram ignorados`, "error");
     }
 
-    const url = URL.createObjectURL(file);
-    arquivosSelecionados.push({ file, url, id: ++idSeq });
-    adicionados++;
-  }
-
-  if (rejeitadosTipo > 0) {
-    showToast("Alguns arquivos foram ignorados (formato inválido)", "error");
-  }
-  if (rejeitadosTamanho > 0) {
-    showToast(`Alguns arquivos passaram de ${MAX_SIZE_MB}MB e foram ignorados`, "error");
-  }
-  if (adicionados > 0) {
+    // Sempre re-renderiza, mesmo que nada tenha sido adicionado, para o
+    // estado da tela (contador/botão) ficar sempre coerente.
     renderizarPreviews();
+  } catch (err) {
+    console.error("Erro ao processar arquivos selecionados:", err);
+    showToast("Não foi possível ler os arquivos selecionados", "error");
   }
 }
 
 if (fileInput) {
   fileInput.addEventListener("change", () => {
-    if (!fileInput.files.length) return;
+    if (!fileInput.files || !fileInput.files.length) return;
     selecionarArquivos(fileInput.files);
     fileInput.value = ""; // permite selecionar os mesmos arquivos de novo depois
   });
@@ -159,7 +191,7 @@ function renderizarPreviews() {
     const cell = document.createElement("div");
     cell.className = "preview-item";
 
-    if (item.file.type.startsWith("image")) {
+    if (item.tipo === "image") {
       const img = document.createElement("img");
       img.src = item.url;
       img.alt = "Pré-visualização";
@@ -257,52 +289,77 @@ async function enviarUmArquivo(file, nome, userId, sufixoUnico) {
 // ── ENVIAR TODOS OS ARQUIVOS SELECIONADOS (sequencialmente) ──
 async function enviarFotos() {
   if (!arquivosSelecionados.length) return;
-  await loginAnonimo();
-
-  const { data: { user } } = await sb.auth.getUser();
-  const nome = nameInput.value.trim();
-  const total = arquivosSelecionados.length;
-  const fila = [...arquivosSelecionados];
 
   sendBtn.disabled = true;
   progressWrap.classList.add("show");
+  progressLabel.textContent = "Conectando...";
+  progressFill.style.width = "0%";
 
-  let enviados = 0;
-  let falhas = 0;
+  try {
+    await loginAnonimo();
+    const { data: { user }, error: userError } = await sb.auth.getUser();
 
-  for (let i = 0; i < fila.length; i++) {
-    const item = fila[i];
-    progressLabel.textContent = `Enviando ${i + 1} de ${total}...`;
-    progressFill.style.width = `${Math.round((i / total) * 100)}%`;
-
-    try {
-      const resultado = await enviarUmArquivo(item.file, nome, user.id, `${i}`);
-      adicionarItemNaGaleria(resultado.publicUrl, item.file.type, nome, user.id, resultado.id, resultado.caminho);
-      atualizarContador(1);
-      enviados++;
-    } catch (err) {
-      console.error(err);
-      showToast(err.message, "error");
-      falhas++;
+    if (userError || !user) {
+      throw new Error("Não foi possível autenticar. Tente recarregar a página.");
     }
 
-    progressFill.style.width = `${Math.round(((i + 1) / total) * 100)}%`;
-  }
+    const nome = nameInput.value.trim();
+    const fila = [...arquivosSelecionados];
+    const total = fila.length;
+    const enviadosComSucesso = [];
 
-  progressLabel.textContent = "Concluído!";
+    let enviados = 0;
+    let falhas = 0;
 
-  if (enviados > 0) {
-    showToast(
-      enviados === 1 ? "Foto enviada! 🎉" : `${enviados} arquivos enviados! 🎉`
-    );
-  }
-  if (falhas > 0) {
-    showToast(`${falhas} ${falhas === 1 ? "arquivo falhou" : "arquivos falharam"} no envio`, "error");
-  }
+    for (let i = 0; i < fila.length; i++) {
+      const item = fila[i];
+      progressLabel.textContent = `Enviando ${i + 1} de ${total}...`;
+      progressFill.style.width = `${Math.round((i / total) * 100)}%`;
 
-  setTimeout(() => progressWrap.classList.remove("show"), 1000);
-  limparPreview();
-  nameInput.value = "";
+      try {
+        const resultado = await enviarUmArquivo(item.file, nome, user.id, `${i}`);
+        const tipoMime = item.tipo === "video" ? "video/mp4" : "image/jpeg";
+        adicionarItemNaGaleria(resultado.publicUrl, tipoMime, nome, user.id, resultado.id, resultado.caminho);
+        atualizarContador(1);
+        enviados++;
+        enviadosComSucesso.push(item.id);
+      } catch (err) {
+        console.error("Falha ao enviar arquivo:", item.file.name, err);
+        showToast(`Erro em "${item.file.name}": ${err.message}`, "error");
+        falhas++;
+      }
+
+      progressFill.style.width = `${Math.round(((i + 1) / total) * 100)}%`;
+    }
+
+    progressLabel.textContent = "Concluído!";
+
+    if (enviados > 0) {
+      showToast(enviados === 1 ? "Foto enviada! 🎉" : `${enviados} arquivos enviados! 🎉`);
+    }
+    if (falhas > 0) {
+      showToast(`${falhas} ${falhas === 1 ? "arquivo falhou" : "arquivos falharam"} no envio`, "error");
+    }
+
+    // Remove da seleção apenas os que foram enviados com sucesso.
+    // Os que falharam continuam na prévia para o usuário tentar de novo.
+    arquivosSelecionados
+      .filter(a => enviadosComSucesso.includes(a.id))
+      .forEach(a => URL.revokeObjectURL(a.url));
+    arquivosSelecionados = arquivosSelecionados.filter(a => !enviadosComSucesso.includes(a.id));
+    fileInput.value = "";
+    renderizarPreviews();
+
+    if (enviados > 0) nameInput.value = "";
+
+  } catch (err) {
+    console.error("Erro geral no envio:", err);
+    showToast(err.message || "Erro inesperado ao enviar. Tente novamente.", "error");
+  } finally {
+    // Garante que a UI nunca fique "travada" mesmo se algo falhar.
+    setTimeout(() => progressWrap.classList.remove("show"), 1000);
+    sendBtn.disabled = arquivosSelecionados.length === 0;
+  }
 }
 
 if (sendBtn) {
@@ -399,7 +456,7 @@ async function carregarGaleria() {
   for (const arquivo of arquivos) {
     const { data: urlData } = sb.storage.from("fotos").getPublicUrl(arquivo.nome_arquivo);
     const ext = arquivo.nome_arquivo.split(".").pop().toLowerCase();
-    const tipo = ["mp4", "mov", "webm"].includes(ext) ? "video/mp4" : "image/jpeg";
+    const tipo = ["mp4", "mov", "webm", "m4v", "avi", "mkv", "3gp"].includes(ext) ? "video/mp4" : "image/jpeg";
 
     const nomeArquivo = arquivo.nome_arquivo.split("/").pop();
     const partes = nomeArquivo.split("_");
