@@ -310,39 +310,91 @@ header {
 .preview-wrap {
   margin-top: 14px;
   display: none;
-  position: relative;
   border-radius: var(--radius-lg);
-  overflow: hidden;
-  max-height: 260px;
-  padding: 4px;
+  padding: 12px;
 }
 
 .preview-wrap.show { display: block; animation: slide-down .4s var(--ease-spring); }
 
-.preview-wrap img,
-.preview-wrap video {
+.preview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.preview-count {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-faint, #6b6b6b);
+}
+
+.preview-clear-all {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: none;
+  border: none;
+  color: var(--rose-deep, #b23a5e);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 6px;
+}
+.preview-clear-all svg { width: 13px; height: 13px; }
+.preview-clear-all:hover { opacity: .75; }
+
+.preview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 10px;
+  max-height: 340px;
+  overflow-y: auto;
+}
+
+.preview-item {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  border-radius: 14px;
+  overflow: hidden;
+  background: rgba(0,0,0,.05);
+}
+
+.preview-item img,
+.preview-item video {
   width: 100%;
-  height: 250px;
+  height: 100%;
   object-fit: cover;
-  border-radius: 16px;
   display: block;
 }
 
-.preview-clear {
+.preview-item-video-badge {
   position: absolute;
-  top: 14px; right: 14px;
+  bottom: 6px;
+  left: 6px;
+  background: rgba(20, 10, 30, .78);
+  color: #fff;
+  font-size: 11px;
+  border-radius: 50%;
+  width: 20px; height: 20px;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.preview-item-remove {
+  position: absolute;
+  top: 6px; right: 6px;
   z-index: 2;
   background: rgba(20, 10, 30, .78);
   border: 1px solid rgba(255,255,255,.2);
   color: white;
   border-radius: 50%;
-  width: 32px; height: 32px;
+  width: 24px; height: 24px;
   cursor: pointer;
   display: flex; align-items: center; justify-content: center;
   transition: transform .2s ease;
 }
-.preview-clear svg { width: 15px; height: 15px; }
-.preview-clear:hover { transform: scale(1.06); }
+.preview-item-remove svg { width: 11px; height: 11px; }
+.preview-item-remove:hover { transform: scale(1.1); }
 
 .progress-wrap { margin-top: 14px; display: none; }
 .progress-wrap.show { display: block; animation: slide-down .4s var(--ease-spring); }

@@ -48,7 +48,7 @@
         id="fileInput"
         type="file"
         accept="image/*,video/*"
-        multiple="false"
+        multiple
         hidden
       >
       <div class="shutter-stage">
@@ -64,17 +64,20 @@
       </div>
 
       <div class="upload-copy">
-        <div class="upload-title">Adicionar foto ou vídeo</div>
-        <div class="upload-hint">Toque para escolher, ou arraste um arquivo aqui</div>
+        <div class="upload-title">Adicionar fotos ou vídeos</div>
+        <div class="upload-hint">Toque para escolher (pode selecionar vários), ou arraste os arquivos aqui</div>
       </div>
     </div>
 
     <div class="preview-wrap glass" id="previewWrap">
-      <button class="preview-clear" id="clearPreview" aria-label="Remover seleção">
-        <svg viewBox="0 0 24 24" fill="none"><path d="M6 6L18 18M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-      </button>
-      <img id="previewImg" style="display:none" alt="Pré-visualização">
-      <video id="previewVid" style="display:none" muted playsinline></video>
+      <div class="preview-header">
+        <span class="preview-count" id="previewCount"></span>
+        <button class="preview-clear-all" id="clearAllPreview" type="button">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M6 6L18 18M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          Limpar tudo
+        </button>
+      </div>
+      <div class="preview-grid" id="previewGrid"></div>
     </div>
 
     <div class="progress-wrap" id="progressWrap">
@@ -87,7 +90,7 @@
     <div class="name-row">
       <input class="name-input glass" id="nameInput" type="text" placeholder="Seu nome (opcional)" maxlength="30">
       <button class="send-btn" id="sendBtn" disabled>
-        <span>Enviar</span>
+        <span id="sendBtnLabel">Enviar</span>
         <svg viewBox="0 0 24 24" fill="none"><path d="M4.5 12H19.5M19.5 12L13.5 6M19.5 12L13.5 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
     </div>

@@ -8,10 +8,11 @@ const fileInput       = document.getElementById("fileInput");
 const cameraBtn       = document.getElementById("cameraBtn");
 const dropZone         = document.getElementById("dropZone");
 const previewWrap     = document.getElementById("previewWrap");
-const previewImg      = document.getElementById("previewImg");
-const previewVid      = document.getElementById("previewVid");
-const clearPreview    = document.getElementById("clearPreview");
+const previewGrid     = document.getElementById("previewGrid");
+const previewCount    = document.getElementById("previewCount");
+const clearAllPreview = document.getElementById("clearAllPreview");
 const sendBtn         = document.getElementById("sendBtn");
+const sendBtnLabel    = document.getElementById("sendBtnLabel");
 const nameInput       = document.getElementById("nameInput");
 const gallery         = document.getElementById("gallery");
 const onlineCount     = document.getElementById("onlineCount");
@@ -26,8 +27,11 @@ const lightboxClose   = document.getElementById("lightboxClose");
 const toastContainer  = document.getElementById("toastContainer");
 
 const MAX_SIZE_MB = 50;
+const MAX_ARQUIVOS = 20; // limite de segurança por envio
 
-let arquivoSelecionado = null;
+// Lista de arquivos selecionados: [{ file, url, id }]
+let arquivosSelecionados = [];
+let idSeq = 0;
 
 // ── EFEITO RIPPLE ──
 function createRipple(event) {
@@ -73,7 +77,6 @@ function showToast(msg, type = "success") {
 
 // ── ARRASTAR E SOLTAR ──
 if (dropZone) {
-  // ── ARRASTAR E SOLTAR ──
   ["dragenter", "dragover"].forEach(evt =>
     dropZone.addEventListener(evt, (e) => {
       e.preventDefault();
@@ -87,8 +90,8 @@ if (dropZone) {
     })
   );
   dropZone.addEventListener("drop", (e) => {
-    const file = e.dataTransfer.files?.[0];
-    if (file) selecionarArquivo(file);
+    const files = e.dataTransfer.files;
+    if (files && files.length) selecionarArquivos(files);
   });
 }
 
@@ -100,113 +103,202 @@ if (cameraBtn) {
   });
 }
 
-// ── SELECIONAR ARQUIVO (input ou drag&drop) ──
-function selecionarArquivo(file) {
-  if (!file.type.startsWith("image") && !file.type.startsWith("video")) {
-    showToast("Selecione uma foto ou vídeo válido", "error");
-    return;
+// ── SELECIONAR ARQUIVOS (input ou drag&drop) ──
+// Aceita FileList ou array de File. Os arquivos válidos são ADICIONADOS
+// à seleção atual, permitindo escolher em mais de uma vez.
+function selecionarArquivos(fileList) {
+  const arquivos = Array.from(fileList);
+  let adicionados = 0;
+  let rejeitadosTipo = 0;
+  let rejeitadosTamanho = 0;
+
+  for (const file of arquivos) {
+    if (arquivosSelecionados.length + adicionados >= MAX_ARQUIVOS) {
+      showToast(`Máximo de ${MAX_ARQUIVOS} arquivos por envio`, "error");
+      break;
+    }
+
+    if (!file.type.startsWith("image") && !file.type.startsWith("video")) {
+      rejeitadosTipo++;
+      continue;
+    }
+    if (file.size > MAX_SIZE_MB * 1024 * 1024) {
+      rejeitadosTamanho++;
+      continue;
+    }
+
+    const url = URL.createObjectURL(file);
+    arquivosSelecionados.push({ file, url, id: ++idSeq });
+    adicionados++;
   }
-  if (file.size > MAX_SIZE_MB * 1024 * 1024) {
-    showToast(`Arquivo muito grande (máx. ${MAX_SIZE_MB}MB)`, "error");
-    return;
+
+  if (rejeitadosTipo > 0) {
+    showToast("Alguns arquivos foram ignorados (formato inválido)", "error");
   }
-
-  arquivoSelecionado = file;
-  const url = URL.createObjectURL(file);
-
-  previewImg.style.display = "none";
-  previewVid.style.display = "none";
-
-  if (file.type.startsWith("image")) {
-    previewImg.src = url;
-    previewImg.style.display = "block";
-  } else {
-    previewVid.src = url;
-    previewVid.style.display = "block";
+  if (rejeitadosTamanho > 0) {
+    showToast(`Alguns arquivos passaram de ${MAX_SIZE_MB}MB e foram ignorados`, "error");
   }
-
-  previewWrap.classList.add("show");
-  sendBtn.disabled = false;
+  if (adicionados > 0) {
+    renderizarPreviews();
+  }
 }
 
 if (fileInput) {
   fileInput.addEventListener("change", () => {
     if (!fileInput.files.length) return;
-    selecionarArquivo(fileInput.files[0]);
+    selecionarArquivos(fileInput.files);
+    fileInput.value = ""; // permite selecionar os mesmos arquivos de novo depois
   });
 }
 
-// ── LIMPAR PREVIEW ──
-function limparPreview() {
-  arquivoSelecionado = null;
-  fileInput.value = "";
-  previewImg.src = "";
-  previewVid.src = "";
-  previewWrap.classList.remove("show");
-  sendBtn.disabled = true;
+// ── RENDERIZAR GRADE DE PRÉVIAS ──
+function renderizarPreviews() {
+  previewGrid.innerHTML = "";
+
+  for (const item of arquivosSelecionados) {
+    const cell = document.createElement("div");
+    cell.className = "preview-item";
+
+    if (item.file.type.startsWith("image")) {
+      const img = document.createElement("img");
+      img.src = item.url;
+      img.alt = "Pré-visualização";
+      cell.appendChild(img);
+    } else {
+      const vid = document.createElement("video");
+      vid.src = item.url;
+      vid.muted = true;
+      vid.playsInline = true;
+      cell.appendChild(vid);
+      const badge = document.createElement("span");
+      badge.className = "preview-item-video-badge";
+      badge.textContent = "▶";
+      cell.appendChild(badge);
+    }
+
+    const removeBtn = document.createElement("button");
+    removeBtn.type = "button";
+    removeBtn.className = "preview-item-remove";
+    removeBtn.setAttribute("aria-label", "Remover arquivo");
+    removeBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none"><path d="M6 6L18 18M18 6L6 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>`;
+    removeBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      removerArquivo(item.id);
+    });
+    cell.appendChild(removeBtn);
+
+    previewGrid.appendChild(cell);
+  }
+
+  atualizarEstadoPreview();
 }
 
-if (clearPreview) {
-  clearPreview.addEventListener("click", limparPreview);
+// ── REMOVER UM ARQUIVO DA SELEÇÃO ──
+function removerArquivo(id) {
+  const alvo = arquivosSelecionados.find(a => a.id === id);
+  if (alvo) URL.revokeObjectURL(alvo.url);
+  arquivosSelecionados = arquivosSelecionados.filter(a => a.id !== id);
+  renderizarPreviews();
 }
 
-// ── ENVIAR ──
-async function enviarFoto() {
-  if (!arquivoSelecionado) return;
-  await loginAnonimo();
+// ── ATUALIZAR CONTADOR / BOTÕES CONFORME SELEÇÃO ──
+function atualizarEstadoPreview() {
+  const total = arquivosSelecionados.length;
 
-  const nome = nameInput.value.trim();
-  const ext  = arquivoSelecionado.name.split(".").pop();
-  const nomeArquivo = Date.now() + (nome ? "_" + nome.replace(/\s+/g, "_") : "") + "." + ext;
-
-  sendBtn.disabled = true;
-  progressWrap.classList.add("show");
-  progressFill.style.width = "30%";
-  progressLabel.textContent = "Enviando...";
-
-  const { data: { user } } = await sb.auth.getUser();
-  const caminho = `${user.id}/${nomeArquivo}`;
-
-  const { error } = await sb.storage.from("fotos").upload(caminho, arquivoSelecionado);
-
-  if (error) {
-    showToast("Erro no Storage: " + error.message, "error");
-    sendBtn.disabled = false;
-    progressWrap.classList.remove("show");
+  if (total === 0) {
+    previewWrap.classList.remove("show");
+    sendBtn.disabled = true;
+    sendBtnLabel.textContent = "Enviar";
+    previewCount.textContent = "";
     return;
   }
 
-  progressFill.style.width = "70%";
-  progressLabel.textContent = "Salvando dados...";
+  previewWrap.classList.add("show");
+  sendBtn.disabled = false;
+  previewCount.textContent = `${total} ${total === 1 ? "arquivo selecionado" : "arquivos selecionados"}`;
+  sendBtnLabel.textContent = total === 1 ? "Enviar" : `Enviar (${total})`;
+}
+
+// ── LIMPAR TODA A PRÉVIA/SELEÇÃO ──
+function limparPreview() {
+  arquivosSelecionados.forEach(item => URL.revokeObjectURL(item.url));
+  arquivosSelecionados = [];
+  fileInput.value = "";
+  previewGrid.innerHTML = "";
+  atualizarEstadoPreview();
+}
+
+if (clearAllPreview) {
+  clearAllPreview.addEventListener("click", limparPreview);
+}
+
+// ── ENVIAR UM ARQUIVO (upload + registro no banco) ──
+async function enviarUmArquivo(file, nome, userId, sufixoUnico) {
+  const ext = file.name.split(".").pop();
+  const nomeArquivo = `${Date.now()}_${sufixoUnico}${nome ? "_" + nome.replace(/\s+/g, "_") : ""}.${ext}`;
+  const caminho = `${userId}/${nomeArquivo}`;
+
+  const { error: uploadError } = await sb.storage.from("fotos").upload(caminho, file);
+  if (uploadError) throw new Error("Erro no Storage: " + uploadError.message);
 
   const { data: urlData } = sb.storage.from("fotos").getPublicUrl(caminho);
-
-  if (!urlData?.publicUrl) {
-    showToast("Erro ao gerar URL da foto", "error");
-    sendBtn.disabled = false;
-    progressWrap.classList.remove("show");
-    return;
-  }
+  if (!urlData?.publicUrl) throw new Error("Erro ao gerar URL da foto");
 
   const { data: foto, error: insertError } = await sb
     .from("fotos")
-    .insert({ owner_id: user.id, nome_arquivo: caminho })
+    .insert({ owner_id: userId, nome_arquivo: caminho })
     .select()
     .single();
+  if (insertError) throw new Error("Erro no Banco: " + insertError.message);
 
-  if (insertError) {
-    showToast("Erro no Banco: " + insertError.message, "error");
-    sendBtn.disabled = false;
-    progressWrap.classList.remove("show");
-    return;
+  return { publicUrl: urlData.publicUrl, id: foto.id, caminho };
+}
+
+// ── ENVIAR TODOS OS ARQUIVOS SELECIONADOS (sequencialmente) ──
+async function enviarFotos() {
+  if (!arquivosSelecionados.length) return;
+  await loginAnonimo();
+
+  const { data: { user } } = await sb.auth.getUser();
+  const nome = nameInput.value.trim();
+  const total = arquivosSelecionados.length;
+  const fila = [...arquivosSelecionados];
+
+  sendBtn.disabled = true;
+  progressWrap.classList.add("show");
+
+  let enviados = 0;
+  let falhas = 0;
+
+  for (let i = 0; i < fila.length; i++) {
+    const item = fila[i];
+    progressLabel.textContent = `Enviando ${i + 1} de ${total}...`;
+    progressFill.style.width = `${Math.round((i / total) * 100)}%`;
+
+    try {
+      const resultado = await enviarUmArquivo(item.file, nome, user.id, `${i}`);
+      adicionarItemNaGaleria(resultado.publicUrl, item.file.type, nome, user.id, resultado.id, resultado.caminho);
+      atualizarContador(1);
+      enviados++;
+    } catch (err) {
+      console.error(err);
+      showToast(err.message, "error");
+      falhas++;
+    }
+
+    progressFill.style.width = `${Math.round(((i + 1) / total) * 100)}%`;
   }
 
-  progressFill.style.width = "100%";
   progressLabel.textContent = "Concluído!";
 
-  adicionarItemNaGaleria(urlData.publicUrl, arquivoSelecionado.type, nome, user.id, foto.id, caminho);
-  atualizarContador(1);
-  showToast("Foto enviada! 🎉");
+  if (enviados > 0) {
+    showToast(
+      enviados === 1 ? "Foto enviada! 🎉" : `${enviados} arquivos enviados! 🎉`
+    );
+  }
+  if (falhas > 0) {
+    showToast(`${falhas} ${falhas === 1 ? "arquivo falhou" : "arquivos falharam"} no envio`, "error");
+  }
 
   setTimeout(() => progressWrap.classList.remove("show"), 1000);
   limparPreview();
@@ -216,14 +308,14 @@ async function enviarFoto() {
 if (sendBtn) {
   sendBtn.addEventListener("click", (e) => {
     createRipple(e);
-    enviarFoto();
+    enviarFotos();
   });
 }
 
-// Enter no campo nome também envia (se houver arquivo selecionado)
+// Enter no campo nome também envia (se houver arquivos selecionados)
 if (nameInput) {
   nameInput.addEventListener("keydown", (e) => {
-    if (e.key === "Enter" && !sendBtn.disabled) enviarFoto();
+    if (e.key === "Enter" && !sendBtn.disabled) enviarFotos();
   });
 }
 
